@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motor Hasar Kayıt Sistemi</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0a0c0f;--surface:#111418;--panel:#161b22;--border:#2a3140;
+  --accent:#e8a020;--accent2:#c0392b;--ok:#27ae60;
+  --text:#d0d8e8;--muted:#6b7a94;
+  --mono:'JetBrains Mono',monospace;--sans:'Barlow',sans-serif
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:48px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;gap:16px;position:relative}
+.logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:2px;white-space:nowrap}
+.logo span{color:var(--muted)}
+.hstats{display:flex;gap:20px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.hstats b{color:var(--text)}
+.hbtn{background:transparent;border:1px solid var(--border);color:var(--text);padding:5px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px;transition:all .15s;white-space:nowrap}
+.hbtn:hover{border-color:var(--accent);color:var(--accent)}
+.hbtn.d:hover{border-color:var(--accent2);color:var(--accent2)}
+.hbtn.back{display:none;gap:6px;align-items:center}
+.hbtn.back.show{display:flex}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;overflow:hidden}
+.page.active{display:flex}
+
+/* ── HOME PAGE ── */
+#home-page{flex-direction:column;overflow-y:auto;padding:40px}
+.home-title{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:24px}
+.motor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.motor-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.motor-card:hover{border-color:var(--accent);background:var(--panel)}
+.motor-card-icon{font-size:32px;opacity:.25;margin-bottom:12px}
+.motor-card-name{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:1px;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motor-card-stats{display:flex;gap:12px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.motor-card-stats b{color:var(--text)}
+.motor-card-stats .cr{color:var(--accent2)}
+.motor-card-del{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--border);cursor:pointer;font-size:14px;transition:color .15s;padding:2px 4px}
+.motor-card-del:hover{color:var(--accent2)}
+.add-card{background:transparent;border:1px dashed var(--border);border-radius:4px;padding:20px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:120px}
+.add-card:hover{border-color:var(--accent);background:var(--panel)}
+.add-icon{font-size:28px;color:var(--muted);transition:color .2s}
+.add-card:hover .add-icon{color:var(--accent)}
+.add-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px}
+
+/* ── ADD MODAL ── */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
+#modal.show{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);padding:28px;width:380px;border-radius:4px}
+.modal-title{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:20px}
+.modal-label{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:6px;display:block;letter-spacing:1px}
+.modal-input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 12px;font-family:var(--mono);font-size:12px;outline:none;margin-bottom:14px;border-radius:2px}
+.modal-input:focus{border-color:var(--accent)}
+.modal-drop{width:100%;background:var(--panel);border:2px dashed var(--border);border-radius:4px;padding:20px;text-align:center;cursor:pointer;margin-bottom:14px;transition:all .2s}
+.modal-drop:hover,.modal-drop.drag{border-color:var(--accent);background:#0d1218}
+.modal-drop-text{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;line-height:1.8}
+.modal-drop-text b{color:var(--accent)}
+.modal-btns{display:flex;gap:10px;margin-top:4px}
+.modal-btn{flex:1;padding:9px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;border-radius:2px;transition:all .15s}
+.modal-ok{background:var(--accent);border:none;color:#000}
+.modal-ok:hover{background:#f0b030}
+.modal-ok:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+.modal-cancel{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.modal-cancel:hover{border-color:var(--muted);color:var(--text)}
+
+/* ── INSPECTOR PAGE ── */
+#inspector-page{flex-direction:row}
+.app{display:flex;flex:1;overflow:hidden;width:100%}
+#vp{flex:1;position:relative;background:#080a0d;cursor:crosshair}
+#vp canvas{display:block}
+#overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#080a0d;z-index:10;gap:14px;transition:opacity .4s}
+#overlay.hidden{opacity:0;pointer-events:none}
+.ov-title{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:3px}
+.ov-sub{font-size:12px;color:var(--muted);text-align:center;line-height:1.8}
+.spin{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#vp.drag-over{outline:2px dashed var(--accent)}
+.hud{position:absolute;font-family:var(--mono);font-size:10px;color:var(--muted);pointer-events:none;line-height:1.8}
+.htl{top:12px;left:12px}
+.hbr{bottom:12px;right:12px;text-align:right}
+.ha{color:var(--accent)}
+
+/* ── PINS ── */
+.pin{position:absolute;width:28px;height:28px;transform:translate(-50%,-50%);cursor:pointer;pointer-events:all;z-index:5}
+.pc{width:28px;height:28px;border-radius:50%;border:2px solid #fff;background:rgba(30,30,30,.8);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:bold;color:#fff;transition:transform .15s}
+.pin:hover .pc{transform:scale(1.25)}
+@keyframes popIn{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* ── SIDEBAR ── */
+.sb{width:400px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.stab{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.tbtn{flex:1;padding:10px;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tbtn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tp{display:none;flex:1;overflow-y:auto;flex-direction:column;min-height:0}
+.tp.active{display:flex}
+.fs{padding:16px;border-bottom:1px solid var(--border)}
+.sl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:10px}
+.fr{margin-bottom:10px}
+.fl{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-family:var(--mono)}
+.fi,.fsel,.fta{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:var(--mono);font-size:11px;outline:none;transition:border-color .15s;border-radius:2px}
+.fi:focus,.fsel:focus,.fta:focus{border-color:var(--accent)}
+.fsel option{background:var(--panel)}
+.fta{resize:vertical;min-height:60px;font-family:var(--sans);font-size:12px;line-height:1.5}
+.sevrow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sevbtn{padding:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:1px;cursor:pointer;transition:all .15s;border-radius:2px}
+.sevbtn.al{border-color:var(--ok);color:var(--ok);background:rgba(39,174,96,.1)}
+.sevbtn.am{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1)}
+.sevbtn.ah{border-color:var(--accent2);color:var(--accent2);background:rgba(192,57,43,.1)}
+.savebtn{width:100%;padding:10px;background:var(--accent);border:none;color:#000;font-family:var(--mono);font-size:11px;letter-spacing:2px;cursor:pointer;transition:background .15s;margin-top:4px}
+.savebtn:hover{background:#f0b030}
+.savebtn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+.ri{padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;display:flex;align-items:flex-start;gap:8px}
+.ri:hover{background:var(--panel)}
+.rn{font-family:var(--mono);font-size:10px;color:var(--accent);min-width:22px}
+.rn.cr{color:var(--accent2)}.rn.ok{color:var(--ok)}
+.rb{flex:1;min-width:0}
+.rp{font-size:11px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rm{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px}
+.rdel{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;transition:color .1s;flex-shrink:0}
+.rdel:hover{color:var(--accent2)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8}
+.ei{font-size:32px;margin-bottom:12px;opacity:.4}
+#sbar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);padding:6px 16px;font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:1px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#sbar.show{opacity:1}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.lang-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:1px;transition:all .15s;border-radius:2px}
+.lang-btn:hover{border-color:var(--accent);color:var(--accent)}
+.lang-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1)}
+.qtag{background:transparent;border:1px solid var(--border);color:var(--muted);padding:3px 8px;font-family:var(--mono);font-size:9px;cursor:pointer;border-radius:2px;transition:all .15s;letter-spacing:.5px}
+.qtag:hover{border-color:var(--accent);color:var(--accent)}
+.qtag.on{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1)}
+.stbtn{padding:5px 3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--mono);font-size:8px;letter-spacing:.3px;cursor:pointer;transition:all .15s;border-radius:2px;flex:1}
+.stbtn.s-open{border-color:var(--accent2);color:var(--accent2);background:rgba(192,57,43,.1)}
+.stbtn.s-prog{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1)}
+.stbtn.s-done{border-color:var(--ok);color:var(--ok);background:rgba(39,174,96,.1)}
+.role-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:1px;transition:all .15s;border-radius:2px}
+.role-btn:hover{border-color:var(--accent);color:var(--accent)}
+.role-btn.active-tech{border-color:#3b82f6;color:#3b82f6;background:rgba(59,130,246,.1)}
+.role-btn.active-eng{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1)}
+.role-btn.active-mgr{border-color:var(--ok);color:var(--ok);background:rgba(39,174,96,.1)}
+.fltbtn{flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:8px;padding:4px 3px;cursor:pointer;letter-spacing:.3px;transition:all .15s;border-radius:2px}
+.fltbtn:hover{border-color:var(--accent);color:var(--accent)}
+.fltbtn.active{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1)}
+.status-badge{font-family:var(--mono);font-size:7px;padding:1px 4px;border-radius:2px;letter-spacing:.2px;white-space:nowrap;vertical-align:middle}
+.s-open{background:rgba(192,57,43,.15);color:var(--accent2)}
+.s-prog{background:rgba(232,160,32,.15);color:var(--accent)}
+.s-done{background:rgba(39,174,96,.15);color:var(--ok)}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hbtn back" id="back-btn" onclick="goHome()">← <span data-i="back">GERİ</span></button>
+    <div class="logo" id="logo-text">HASAR<span>/</span>SİSTEM</div>
+  </div>
+  <div class="hstats" id="hdr-stats" style="display:none;position:absolute;left:0;right:0;text-align:center;pointer-events:none;justify-content:center">
+    <span><span data-i="records">KAYIT</span>: <b id="hc">0</b></span>
+    <span><span data-i="critical">KRİTİK</span>: <b id="hcr" style="color:var(--accent2)">0</b></span>
+    <span><span data-i="model">MODEL</span>: <b id="hm">—</b></span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+    <div style="display:none;gap:8px;align-items:center" id="hdr-btns">
+      <div style="position:relative" id="report-dd">
+        <button class="hbtn" id="btn-report" onclick="toggleReportDD()">▼ RAPOR</button>
+        <div id="report-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--surface);border:1px solid var(--border);z-index:50;min-width:140px">
+          <button onclick="exportJSON();closeReportDD()" style="display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);padding:8px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;text-align:left;letter-spacing:1px" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'" id="dd-json">JSON</button>
+          <button onclick="exportPDF();closeReportDD()" style="display:block;width:100%;background:transparent;border:none;color:var(--text);padding:8px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;text-align:left;letter-spacing:1px" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'" id="dd-pdf">PDF</button>
+        </div>
+      </div>
+      <button class="hbtn d" id="btn-clear" style="display:none" onclick="clearAll()"></button>
+    </div>
+    <div style="display:flex;gap:2px;flex-shrink:0">
+      <button class="lang-btn active" onclick="setLang('tr')">TR</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('de')">DE</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── HOME PAGE ── -->
+<div class="page active" id="home-page">
+  <!-- Veri çizgisi -->
+  <div id="kpi-row" style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:20px;letter-spacing:.5px;line-height:2"></div>
+  <!-- Başlık + Arama -->
+  <div style="margin-bottom:16px">
+    <div class="home-title" style="margin-bottom:8px">// MOTOR MODELLERİ</div>
+    <input type="text" id="motor-search" placeholder="Ara..." oninput="renderHome()"
+      style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);padding:4px 8px;font-family:var(--mono);font-size:11px;outline:none;width:200px;transition:border-color .15s;letter-spacing:.5px"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+  </div>
+  <div class="motor-grid" id="motor-grid"></div>
+</div>
+
+<!-- ── INSPECTOR PAGE ── -->
+<div class="page" id="inspector-page">
+  <div id="vp">
+    <div id="overlay">
+      <div class="spin" id="spin"></div>
+      <div class="ov-title" id="otitle">MODEL YÜKLENİYOR</div>
+      <div class="ov-sub" id="osub">Lütfen bekleyin...</div>
+    </div>
+    <div class="hud htl" id="hudtl" style="display:none">
+      <div class="ha" id="hud-title">// DİJİTAL İKİZ</div>
+      <div id="hud-turn">SOL SÜRÜKLE: DÖNDÜR</div>
+      <div id="hud-pan">SAĞ SÜRÜKLE: PAN</div>
+      <div id="hud-zoom">SCROLL: ZOOM</div>
+      <div style="margin-top:6px" id="hud-click">SOL TIK: <span class="ha" id="hud-mark">HASAR İŞARETLE</span></div>
+    </div>
+    <!-- Zaman kaydırıcısı kaldırıldı -->
+    <div class="hud hbr" id="hudbr" style="display:none">
+      <div id="hudpos" style="color:var(--muted)">—</div>
+    </div>
+    <div id="sbar"></div>
+    <div id="pins" style="position:absolute;inset:0;pointer-events:none"></div>
+  </div>
+
+  <div class="sb">
+    <div id="role-btns" style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0">
+      <button class="role-btn active-tech" onclick="setRole('tech',this)" id="role-tech"
+        style="flex:1;border:none;border-right:1px solid var(--border);border-radius:0;padding:8px 4px;font-size:9px">TEKNİSYEN</button>
+      <button class="role-btn" onclick="setRole('eng',this)" id="role-eng"
+        style="flex:1;border:none;border-right:1px solid var(--border);border-radius:0;padding:8px 4px;font-size:9px">MÜHENDİS</button>
+      <button class="role-btn" onclick="setRole('mgr',this)" id="role-mgr"
+        style="flex:1;border:none;border-radius:0;padding:8px 4px;font-size:9px">YÖNETİCİ</button>
+    </div>
+    <div class="stab">
+      <button class="tbtn active" onclick="switchTab('form',this)">HASAR GİR</button>
+      <button class="tbtn" onclick="switchTab('list',this)">KAYITLAR</button>
+    </div>
+    <div class="tp active" id="tab-form">
+      <div class="fs">
+        <div class="sl" id="sl-part">// PARÇA BİLGİSİ</div>
+        <div class="fr">
+          <label class="fl" id="lbl-part">PARÇA ADI</label>
+          <select class="fsel" id="fp-select" onchange="onPartSelect(this.value)">
+            <option value="">Seçin...</option>
+          </select>
+        </div>
+        <div class="fr" id="fp-custom-row" style="display:none">
+          <label class="fl" id="lbl-part-custom">ÖZEL PARÇA ADI</label>
+          <input class="fi" id="fp" placeholder="Parça adı girin...">
+        </div>
+        <div class="fr">
+          <label class="fl">HASAR TİPİ</label>
+          <select class="fsel" id="ft">
+            <option value="">Seçin...</option>
+            <option>Çatlak</option><option>Sızıntı / Kaçak</option><option>Aşınma</option>
+            <option>Korozyon / Pas</option><option>Mekanik Arıza</option>
+            <option>Titreşim / Gürültü</option><option>Isıl Hasar</option>
+            <option>Yabancı Cisim</option><option>Diğer</option>
+          </select>
+        </div>
+        <div class="fr" id="dim-row" style="display:none">
+          <label class="fl" id="dim-label">BOYUT (mm)</label>
+          <input class="fi" id="fdim" type="number" placeholder="örn. 12" min="0" step="0.1">
+        </div>
+        <!-- Kestirimci Bakım Uyarısı -->
+        <div id="predictive-alert" style="display:none;margin-top:8px;background:rgba(232,160,32,.07);border:1px solid rgba(232,160,32,.3);border-radius:2px;padding:8px 10px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.5px;margin-bottom:4px">💡 SİSTEM ÖNERİSİ</div>
+          <div id="predictive-text" style="font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.6"></div>
+        </div>
+        <!-- Stok Durumu -->
+        <div id="stock-card" style="display:none;margin-top:8px;border:1px solid var(--border);border-radius:2px;padding:8px 10px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.5px;margin-bottom:4px" id="stock-title">// YEDEK PARÇA DURUMU</div>
+          <div id="stock-content" style="font-family:var(--mono);font-size:9px;line-height:1.7"></div>
+        </div>
+      </div>
+
+      <div class="fs">
+        <div class="sl" id="status-sl">// DURUM</div>
+        <div class="sevrow">
+          <button class="stbtn" id="st-open" onclick="setStatus('OPEN',this)">🔴 AÇIK</button>
+          <button class="stbtn" id="st-prog" onclick="setStatus('IN_PROGRESS',this)">🟡 İŞLEMDE</button>
+          <button class="stbtn" id="st-done" onclick="setStatus('RESOLVED',this)">🟢 ONARİLDI</button>
+        </div>
+        <input type="hidden" id="fstatus" value="OPEN">
+      </div>
+
+      <!-- Maliyet — sadece mühendis/yönetici -->
+      <div class="fs" id="cost-section" style="display:none">
+        <div class="sl" id="sl-cost">// MALİYET TAHMİNİ</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label class="fl" id="lbl-hours">ADAM/SAAT</label>
+            <input class="fi" id="fhours" type="number" placeholder="örn. 4" min="0" step="0.5">
+          </div>
+          <div>
+            <label class="fl" id="lbl-cost">MALİYET (₺)</label>
+            <input class="fi" id="fcost" type="number" placeholder="örn. 5000" min="0" step="100">
+          </div>
+        </div>
+      </div>
+
+      <div class="fs">
+        <div class="sl" id="sl-sev">// ACİLİYET SEVİYESİ</div>
+        <div class="sevrow">
+          <button class="sevbtn" onclick="setSev('low',this)">DÜŞÜK</button>
+          <button class="sevbtn" onclick="setSev('mid',this)">ORTA</button>
+          <button class="sevbtn" onclick="setSev('high',this)">KRİTİK</button>
+        </div>
+      </div>
+
+      <div class="fs">
+        <div class="sl" id="sl-note">// NOT</div>
+        <div id="quick-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
+        <textarea class="fta" id="fn" placeholder="Gözlem detayları..."></textarea>
+      </div>
+
+      <div class="fs">
+        <div class="sl" id="sl-photo">// FOTOĞRAF</div>
+        <div id="photo-drop" onclick="document.getElementById('photo-input').click()"
+          style="border:1px dashed var(--border);border-radius:2px;padding:10px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:10px;color:var(--muted)">
+          📷 FOTOĞRAF EKLE
+        </div>
+        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+        <div id="photo-preview" style="display:none;margin-top:8px;position:relative">
+          <img id="photo-img" style="width:100%;border-radius:2px;max-height:120px;object-fit:cover">
+          <button onclick="removePhoto()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;cursor:pointer;border-radius:2px;padding:2px 6px;font-size:11px">✕</button>
+        </div>
+      </div>
+
+      <div class="fs">
+        <div class="sl" id="sl-tech">// TEKNİSYEN</div>
+        <input class="fi" id="ftech" placeholder="Ad Soyad">
+      </div>
+
+      <div style="padding:12px 16px;border-top:1px solid var(--border)">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:8px"><span id="hint">▶ 3D modele tıklayarak nokta seçin</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="savebtn" id="savebtn" onclick="saveRec()" disabled style="flex:1;margin-top:0">KAYDET</button>
+          <button id="cancelbtn" onclick="cancelEdit()" style="display:none;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;padding:10px 14px;cursor:pointer;letter-spacing:1px;white-space:nowrap" id="cancelbtn">İPTAL</button>
+        </div>
+      </div>
+    </div>
+    <div class="tp" id="tab-list">
+      <!-- Filtre butonları -->
+      <div id="status-filters" style="display:flex;gap:2px;padding:6px 12px 0;flex-shrink:0">
+        <button class="fltbtn active" id="flt-all" onclick="setFilter('ALL',this)">HEPSİ</button>
+        <button class="fltbtn" id="flt-open" onclick="setFilter('OPEN',this)">AÇIK</button>
+        <button class="fltbtn" id="flt-prog" onclick="setFilter('IN_PROGRESS',this)">İŞLEMDE</button>
+        <button class="fltbtn" id="flt-done" onclick="setFilter('RESOLVED',this)">ONARILDI</button>
+      </div>
+      <!-- Hasar tipi grafik -->
+      <div id="type-chart" style="padding:5px 12px 0"></div>
+      <div id="reclist"><div class="empty"><div class="ei">◈</div>Henüz kayıt yok.</div></div>
+    </div>
+    <!-- Temizle — Mühendis/Yönetici için sidebar altı -->
+    <div id="clear-section" style="padding:8px 16px 12px;border-top:1px solid var(--border);display:none;flex-shrink:0">
+      <div id="clear-confirm" style="display:none;margin-bottom:6px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--accent2);margin-bottom:4px" id="clear-prompt">Motor adını yaz ve onayla:</div>
+        <input id="clear-input" class="fi" style="font-size:10px;margin-bottom:6px" placeholder="">
+        <div style="display:flex;gap:6px">
+          <button onclick="confirmClear()" style="flex:1;background:rgba(192,57,43,.15);border:1px solid var(--accent2);color:var(--accent2);font-family:var(--mono);font-size:10px;padding:6px;cursor:pointer;letter-spacing:1px" id="clear-confirm-btn">ONAYLA</button>
+          <button onclick="toggleClearConfirm()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;padding:6px 12px;cursor:pointer;letter-spacing:1px" id="clear-cancel-btn">İPTAL</button>
+        </div>
+      </div>
+      <button onclick="toggleClearConfirm()" style="width:100%;background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:1px;padding:4px;text-align:left" id="clear-toggle">// tüm kayıtları sil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD MOTOR MODAL ── -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-title">// YENİ MOTOR EKLE</div>
+    <label class="modal-label">MOTOR ADI</label>
+    <input class="modal-input" id="m-name" placeholder="M20, Leopard V8, Turbo...">
+    <label class="modal-label">GLB DOSYASI</label>
+    <div class="modal-drop" id="m-drop" onclick="document.getElementById('m-file').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="event.preventDefault();this.classList.remove('drag');handleModalDrop(event)">
+      <div class="modal-drop-text" id="m-drop-text">
+        Sürükle bırak veya tıkla<br>
+        <b>.glb / .gltf</b>
+      </div>
+    </div>
+    <input type="file" id="m-file" accept=".glb,.gltf" style="display:none" onchange="handleModalFile(this.files[0])">
+    <div class="modal-btns">
+      <button class="modal-btn modal-cancel" onclick="closeModal()">İPTAL</button>
+      <button class="modal-btn modal-ok" id="m-ok" onclick="addMotor()" disabled>EKLE</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ── MOTOR STORE ──
+// motors: [{id, name, fileName, records:[]}]
+let motors = [];
+let activeMotorId = null;
+let pendingFile = null;
+const fileCache = {}; // id -> objectURL
+
+function getMotor(id){ return motors.find(m=>m.id===id); }
+function getRecords(){ return getMotor(activeMotorId)?.records || []; }
+function setRecords(recs){ const m=getMotor(activeMotorId); if(m) m.records=recs; saveMotors(); }
+
+// ── THREE ──
+let scene, camera, renderer, controls, model;
+const RC = new THREE.Raycaster();
+const MV = new THREE.Vector2();
+const PE = {};
+let curPt=null, curSev=null, editId=null, pinCtr=0;
+
+function initThree(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x080a0d);
+  scene.add(new THREE.AmbientLight(0xffffff,0.5));
+  const d1=new THREE.DirectionalLight(0xffffff,0.9); d1.position.set(5,10,5); scene.add(d1);
+  const d2=new THREE.DirectionalLight(0x8090ff,0.3); d2.position.set(-5,2,-5); scene.add(d2);
+  const pt=new THREE.PointLight(0xe8a020,0.4,20); pt.position.set(0,5,0); scene.add(pt);
+
+  const vp=document.getElementById('vp');
+  camera=new THREE.PerspectiveCamera(45,vp.clientWidth/vp.clientHeight,0.001,1000);
+  camera.position.set(3,2,3);
+
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(devicePixelRatio);
+  renderer.setSize(vp.clientWidth,vp.clientHeight);
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.2;
+  vp.appendChild(renderer.domElement);
+
+  controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=0.08;
+  controls.minDistance=0.05; controls.maxDistance=50;
+
+  let mdPos={x:0,y:0};
+  renderer.domElement.addEventListener('pointerdown',e=>{mdPos={x:e.clientX,y:e.clientY};});
+  renderer.domElement.addEventListener('pointerup',e=>{
+    const dx=e.clientX-mdPos.x,dy=e.clientY-mdPos.y;
+    if(Math.sqrt(dx*dx+dy*dy)<4) onVPClick(e);
+  });
+  renderer.domElement.addEventListener('mousemove',onMM);
+  window.addEventListener('resize',onResize);
+
+  const vp2=document.getElementById('vp');
+  vp2.addEventListener('dragover',e=>{e.preventDefault();vp2.classList.add('drag-over');});
+  vp2.addEventListener('dragleave',()=>vp2.classList.remove('drag-over'));
+  vp2.addEventListener('drop',e=>{e.preventDefault();vp2.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)loadFileIntoActive(f);});
+
+  (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); updatePins(); })();
+}
+
+function onResize(){
+  const vp=document.getElementById('vp');
+  camera.aspect=vp.clientWidth/vp.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(vp.clientWidth,vp.clientHeight);
+}
+
+// ── HOME ──
+function renderHome(){
+  const grid=document.getElementById('motor-grid');
+  grid.innerHTML='';
+
+  const q=(document.getElementById('motor-search')?.value||'').toLowerCase();
+
+  // KPI hesapla
+  const allRecs=motors.flatMap(m=>m.records||[]);
+  const totalCost=allRecs.filter(r=>r.status!=='RESOLVED').reduce((s,r)=>s+(parseFloat(r.cost)||0),0);
+  const totalCritical=allRecs.filter(r=>r.severity==='high'&&r.status!=='RESOLVED').length;
+  const resolved=allRecs.filter(r=>r.status==='RESOLVED'&&r.resolvedAt&&r.date);
+  const mttr=resolved.length>0?(resolved.reduce((s,r)=>{
+    try{
+      const d1=new Date(r.date.split(' ')[0].split('.').reverse().join('-'));
+      const d2=new Date(r.resolvedAt.split(' ')[0].split('.').reverse().join('-'));
+      return s+Math.max(1,(d2-d1)/(1000*60*60*24));
+    }catch(e){return s+1;}
+  },0)/resolved.length).toFixed(1):null;
+
+  // Veri çizgisi
+  const kpiRow=document.getElementById('kpi-row');
+  if(kpiRow){
+    const critStr=totalCritical>0
+      ?`<span style="color:var(--accent2)">${t('kpiCritical')}: ${totalCritical}</span>`
+      :`<span>${t('kpiCritical')}: 0</span>`;
+    const costStr=totalCost>0
+      ?` | <span style="color:var(--accent)">${t('kpiCost')}: ${fmtCost(totalCost)}</span>`:'';
+    const mttrStr=mttr
+      ?` | <span style="color:var(--ok)">${t('kpiMttr')}: ${mttr} ${t('kpiDay')}</span>`:'';
+    kpiRow.innerHTML=`${t('kpiTitle')} &nbsp;·&nbsp; ${t('kpiMotor')}: <b style="color:var(--text)">${motors.length}</b> | ${t('kpiRecord')}: <b style="color:var(--text)">${allRecs.length}</b> | ${critStr}${costStr}${mttrStr}`;
+  }
+
+  // Kartlar
+  const filtered=q?motors.filter(m=>m.name.toLowerCase().includes(q)):motors;
+  filtered.forEach(m=>{
+    const recs=m.records||[];
+    const cr=recs.filter(r=>r.severity==='high'&&r.status!=='RESOLVED').length;
+    const mc=recs.filter(r=>r.status!=='RESOLVED').reduce((s,r)=>s+(parseFloat(r.cost)||0),0);
+    // 30 gün kontrol edilmedi mi?
+    let daysSince = null;
+    if(recs.length>0){
+      try{
+        const last=recs[recs.length-1];
+        const d=new Date(last.date.split(' ')[0].split('.').reverse().join('-'));
+        daysSince=Math.floor((Date.now()-d)/(1000*60*60*24));
+      }catch(e){}
+    }
+    const needsMaint = daysSince!==null && daysSince>=30;
+    const div=document.createElement('div');
+    div.className='motor-card';
+    if(cr>0) div.style.borderColor='var(--accent2)';
+    else if(mc>5000) div.style.borderColor='var(--accent)';
+    div.innerHTML=`
+      <button class="motor-card-del" onclick="event.stopPropagation();deleteMotor('${m.id}')" title="Sil">✕</button>
+      <div class="motor-card-icon">⚙</div>
+      <div class="motor-card-name">${m.name}</div>
+      <div class="motor-card-stats">
+        <span>${t('records')}: <b>${recs.length}</b></span>
+        <span>${t('critical')}: <b class="${cr>0?'cr':''}">${cr}</b></span>
+      </div>
+      ${cr>0?`<div style="margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--accent2);letter-spacing:.5px">◆ ${t('cardCritical')}: ${cr}</div>`:''}
+      ${mc>0?`<div style="margin-top:4px;font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.5px">◆ ${t('cardCost')}: ${fmtCost(mc)}</div>`:''}
+      ${needsMaint?`<div style="margin-top:4px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.5px">⚠ ${daysSince}G kontrol yok</div>`:''}`;
+    div.onclick=()=>openMotor(m.id);
+    grid.appendChild(div);
+  });
+
+  // + ekle kartı
+  const add=document.createElement('div');
+  add.className='add-card';
+  add.innerHTML=`<div class="add-icon">+</div><div class="add-label">${t('newMotor')}</div>`;
+  add.onclick=openModal;
+  grid.appendChild(add);
+}
+
+function goHome(){
+  // 3D modeli temizle
+  if(model){ scene.remove(model); model=null; }
+  Object.keys(PE).forEach(k=>{PE[k].remove();delete PE[k];});
+  const tmp=document.getElementById('pin-temp');if(tmp)tmp.remove();
+  activeMotorId=null;
+
+  document.getElementById('home-page').classList.add('active');
+  document.getElementById('inspector-page').classList.remove('active');
+  document.getElementById('back-btn').classList.remove('show');
+  document.getElementById('hdr-stats').style.display='none';
+  document.getElementById('hdr-btns').style.display='none';
+  document.getElementById('logo-text').textContent='HASAR/SİSTEM';
+  renderHome();
+}
+
+function openMotor(id){
+  activeMotorId=id;
+  const m=getMotor(id);
+  pinCtr=m.records.length>0?Math.max(...m.records.map(r=>r.id)):0;
+
+  document.getElementById('home-page').classList.remove('active');
+  document.getElementById('inspector-page').classList.add('active');
+  document.getElementById('back-btn').classList.add('show');
+  document.getElementById('hdr-stats').style.display='flex';
+  document.getElementById('hdr-btns').style.display='flex';
+  document.getElementById('logo-text').textContent=m.name.toUpperCase();
+
+  updateHeader();
+  resetForm();
+  initPartSelect();
+  initQuickTags();
+  renderPins();
+  renderList();
+  applyLang();
+  applyRole();
+
+  // Canvas inspector açıkken boyutlandır
+  setTimeout(()=>{
+    onResize();
+    const url = fileCache[id];
+    if(url){
+      loadFromURL(url, m.name.toUpperCase());
+    } else if(m.fileName){
+      loadFromURL(m.fileName, m.name.toUpperCase());
+    }
+  }, 100);
+}
+
+function deleteMotor(id){
+  if(!confirm('Bu motor ve tüm kayıtları silinecek?')) return;
+  motors=motors.filter(m=>m.id!==id);
+  saveMotors();
+  renderHome();
+}
+
+// ── MODAL ──
+function openModal(){
+  pendingFile=null;
+  document.getElementById('m-name').value='';
+  document.getElementById('m-drop-text').innerHTML='Sürükle bırak veya tıkla<br><b>.glb / .gltf</b>';
+  document.getElementById('m-ok').disabled=true;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+function handleModalFile(file){
+  if(!file) return;
+  pendingFile=file;
+  document.getElementById('m-drop-text').innerHTML=`<b style="color:var(--accent)">${file.name}</b><br>hazır`;
+  checkModalOk();
+}
+function handleModalDrop(e){
+  const f=e.dataTransfer.files[0]; if(f) handleModalFile(f);
+}
+function checkModalOk(){
+  const name=document.getElementById('m-name').value.trim();
+  document.getElementById('m-ok').disabled=!(name&&pendingFile);
+}
+document.getElementById('m-name').addEventListener('input',checkModalOk);
+
+function addMotor(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name||!pendingFile) return;
+  const id='motor_'+Date.now();
+  const url=URL.createObjectURL(pendingFile);
+  fileCache[id]=url;
+  motors.push({id, name, fileName:pendingFile.name, records:[]});
+  saveMotors();
+  closeModal();
+  renderHome();
+  // Direkt aç
+  openMotor(id);
+}
+
+// ── MODEL LOADING ──
+function loadFromURL(url, name){
+  const loader=new THREE.GLTFLoader();
+  const ov=document.getElementById('overlay');
+  ov.classList.remove('hidden'); ov.style.opacity='1'; ov.style.pointerEvents='all';
+  document.getElementById('otitle').textContent=t('loading')||'MODEL YÜKLENİYOR';
+  document.getElementById('osub').textContent='...';
+  loader.load(url,
+    g=>onLoaded(g,name),
+    x=>{if(x.total) document.getElementById('osub').textContent=Math.round(x.loaded/x.total*100)+'%...';},
+    e=>{console.error(e);document.getElementById('otitle').textContent='HATA';document.getElementById('osub').textContent='Dosya yüklenemedi';}
+  );
+}
+
+function loadFromBlob(blob, name){
+  const url=URL.createObjectURL(blob);
+  const loader=new THREE.GLTFLoader();
+  document.getElementById('overlay').classList.remove('hidden');
+  loader.load(url,
+    g=>{onLoaded(g,name);URL.revokeObjectURL(url);},
+    x=>{if(x.total) document.getElementById('osub').textContent=Math.round(x.loaded/x.total*100)+'%...';},
+    e=>{console.error(e);URL.revokeObjectURL(url);}
+  );
+}
+
+function loadFileIntoActive(file){
+  if(!activeMotorId) return;
+  const url=URL.createObjectURL(file);
+  fileCache[activeMotorId]=url;
+  const m=getMotor(activeMotorId);
+  m.fileName=file.name; saveMotors();
+  loadFromURL(url, m.name.toUpperCase());
+}
+
+function onLoaded(gltf, name){
+  if(model) scene.remove(model);
+  model=gltf.scene;
+  const box=new THREE.Box3().setFromObject(model);
+  const center=box.getCenter(new THREE.Vector3());
+  const size=box.getSize(new THREE.Vector3());
+  const s=2/Math.max(size.x,size.y,size.z);
+  model.position.sub(center.multiplyScalar(s));
+  model.scale.setScalar(s);
+  model.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+  scene.add(model);
+  updateModelCenter();
+  camera.position.set(3,2,3);
+  controls.target.set(0,0,0);
+  controls.update();
+  const ov=document.getElementById('overlay');
+  ov.classList.add('hidden'); ov.style.opacity='0'; ov.style.pointerEvents='none';
+  document.getElementById('hudtl').style.display='block';
+  document.getElementById('hudbr').style.display='block';
+  const tsBtn=document.getElementById('time-slider-btn'); if(tsBtn) tsBtn.style.display='block';
+  document.getElementById('hm').textContent=name;
+  showStatus(t('loaded'));
+}
+
+// ── CLICK ──
+function onVPClick(e){
+  if(!model) return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  MV.x=((e.clientX-rect.left)/rect.width)*2-1;
+  MV.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  RC.setFromCamera(MV,camera);
+  const hits=RC.intersectObject(model,true);
+  if(hits.length){
+    const wp=hits[0].point.clone();
+    curPt={world:wp};
+    showTempPin(wp, pinCtr+1);
+    document.getElementById('hint').textContent=t('pointSelected').replace('%n',pinCtr+1);
+    document.getElementById('hint').style.color='var(--accent)';
+    document.getElementById('savebtn').disabled=false;
+    if(editId===null) document.getElementById('savebtn').textContent=t('save');
+    goTab('form');
+    showStatus(t('pointSelected').replace('%n',pinCtr+1));
+  } else {
+    showStatus(t('clickModel'));
+  }
+}
+
+function onMM(e){
+  if(!model) return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  MV.x=((e.clientX-rect.left)/rect.width)*2-1;
+  MV.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  RC.setFromCamera(MV,camera);
+  const h=RC.intersectObject(model,true);
+  document.getElementById('hudpos').textContent=
+    h.length?`X:${h[0].point.x.toFixed(3)} Y:${h[0].point.y.toFixed(3)} Z:${h[0].point.z.toFixed(3)}`:'—';
+}
+
+// ── TEMP PIN ──
+function showTempPin(wp, num){
+  const old=document.getElementById('pin-temp'); if(old) old.remove();
+  const p=document.createElement('div');
+  p.className='pin'; p.id='pin-temp'; p.style.pointerEvents='none';
+  p.innerHTML=`<div class="pc" style="border-color:#fff;color:#fff;background:rgba(255,255,255,.15)">${num}</div>`;
+  p._world=wp;
+  document.getElementById('pins').appendChild(p);
+}
+
+// ── RECORDS ──
+function saveRec(){
+  const fpSel=document.getElementById('fp-select');
+  const fpInput=document.getElementById('fp');
+  const selVal=fpSel?.value||'';
+  const part=(selVal&&!selVal.endsWith('...'))?selVal:(fpInput?.value.trim()||'');
+  const type=document.getElementById('ft').value;
+  const note=document.getElementById('fn').value.trim();
+  const tech=document.getElementById('ftech').value.trim();
+  if(!part){showStatus(t('needPart'));return;}
+  if(!type){showStatus(t('needType'));return;}
+  if(!curSev){showStatus(t('needSev'));return;}
+
+  // Hasar tipini index olarak kaydet — dil bağımsız
+  const typeIndex = T['tr'].types.indexOf(type) !== -1
+    ? T['tr'].types.indexOf(type)
+    : T['en'].types.indexOf(type) !== -1
+      ? T['en'].types.indexOf(type)
+      : T['de'].types.indexOf(type);
+
+  let recs=getRecords();
+
+  if(editId!==null){
+    const r=recs.find(r=>r.id===editId);
+    if(r){
+      const newStatus=document.getElementById('fstatus').value||r.status||'OPEN';
+      // Durum değişti mi? → audit log
+      if(!r.log) r.log=[];
+      if(newStatus!==r.status){
+        r.log.push({date:new Date().toLocaleString('tr-TR'),user:tech||'—',role:currentRole,action:'STATUS_CHANGE',from:r.status||'OPEN',to:newStatus});
+        if(newStatus==='RESOLVED') r.resolvedAt=new Date().toLocaleString('tr-TR');
+      } else {
+        r.log.push({date:new Date().toLocaleString('tr-TR'),user:tech||'—',role:currentRole,action:'UPDATED'});
+      }
+      r.part=part;r.typeIndex=typeIndex>=0?typeIndex:r.typeIndex;r.type=type;r.note=note;r.tech=tech;r.severity=curSev;
+      r.status=newStatus;
+      r.dimension=document.getElementById('fdim').value||null;
+      r.hours=document.getElementById('fhours').value||null;
+      r.cost=document.getElementById('fcost').value||null;
+      if(currentPhoto) r.photo=currentPhoto;
+    }
+    if(PE[editId]){PE[editId].remove();delete PE[editId];}
+    editId=null;
+    setRecords(recs);
+    renderPins();renderList();updateHeader();resetForm();
+    showStatus(t('updated'));goTab('list');
+  } else {
+    const nextId=recs.length>0?Math.max(...recs.map(r=>r.id))+1:1;
+    pinCtr=nextId;
+    const initTech=document.getElementById('ftech').value.trim();
+    recs.push({id:nextId,part,typeIndex:typeIndex>=0?typeIndex:null,type,note,tech,severity:curSev,
+      status:document.getElementById('fstatus').value||'OPEN',
+      dimension:document.getElementById('fdim').value||null,
+      hours:document.getElementById('fhours').value||null,
+      cost:document.getElementById('fcost').value||null,
+      photo:currentPhoto||null,
+      log:[{date:new Date().toLocaleString('tr-TR'),user:initTech||'—',role:currentRole,action:'CREATED'}],
+      point:curPt?{
+        x:parseFloat(curPt.world.x.toFixed(4)),
+        y:parseFloat(curPt.world.y.toFixed(4)),
+        z:parseFloat(curPt.world.z.toFixed(4))
+      }:null,
+      date:new Date().toLocaleString('tr-TR')});
+    setRecords(recs);
+    const old=document.getElementById('pin-temp'); if(old) old.remove();
+    renderPins();renderList();updateHeader();resetForm();
+    showStatus(t('saved').replace('%n',nextId));goTab('list');
+  }
+}
+
+function approveRec(id){
+  let recs=getRecords();
+  const r=recs.find(r=>r.id===id); if(!r) return;
+  if(!r.log) r.log=[];
+  const prevStatus=r.status||'OPEN';
+  r.status='RESOLVED';
+  r.resolvedAt=new Date().toLocaleString('tr-TR');
+  r.approved=true;
+  r.log.push({date:new Date().toLocaleString('tr-TR'),role:'mgr',action:'STATUS_CHANGE',from:prevStatus,to:'RESOLVED'});
+  r.log.push({date:new Date().toLocaleString('tr-TR'),role:'mgr',action:'APPROVED'});
+  setRecords(recs); renderList(); updateHeader(); renderHome();
+  showStatus(t('approved'));
+}
+
+function rejectRec(id){
+  let recs=getRecords();
+  const r=recs.find(r=>r.id===id); if(!r) return;
+  if(!r.log) r.log=[];
+  r.approved=false;
+  r.log.push({date:new Date().toLocaleString('tr-TR'),role:'mgr',action:'REJECTED'});
+  setRecords(recs); renderList();
+  showStatus(t('rejected'));
+}
+
+function toggleClearConfirm(){
+  const cc=document.getElementById('clear-confirm');
+  const m=getMotor(activeMotorId);
+  if(!cc||!m) return;
+  const showing=cc.style.display==='block';
+  cc.style.display=showing?'none':'block';
+  document.getElementById('clear-input').value='';
+  document.getElementById('clear-input').placeholder=m.name;
+}
+
+function confirmClear(){
+  const m=getMotor(activeMotorId); if(!m) return;
+  const val=document.getElementById('clear-input').value.trim();
+  if(val.toLowerCase()!==m.name.toLowerCase()){
+    document.getElementById('clear-input').style.borderColor='var(--accent2)';
+    setTimeout(()=>document.getElementById('clear-input').style.borderColor='',1000);
+    return;
+  }
+  Object.keys(PE).forEach(k=>{PE[k].remove();delete PE[k];});
+  setRecords([]);pinCtr=0;
+  document.getElementById('clear-confirm').style.display='none';
+  renderPins();renderList();updateHeader();renderHome();
+  showStatus('SİLİNDİ');
+}
+
+function clearAll(){
+  toggleClearConfirm();
+}
+
+function deleteRec(id){
+  let recs=getRecords().filter(r=>r.id!==id);
+  recs.forEach((r,i)=>r.id=i+1);
+  pinCtr=recs.length;
+  Object.keys(PE).forEach(k=>{PE[k].remove();delete PE[k];});
+  setRecords(recs);
+  renderPins();renderList();updateHeader();
+}
+
+function clearAll(){
+  if(!confirm('Tüm kayıtlar silinecek?')) return;
+  Object.keys(PE).forEach(k=>{PE[k].remove();delete PE[k];});
+  setRecords([]);pinCtr=0;
+  renderPins();renderList();updateHeader();
+  showStatus('SİLİNDİ');
+}
+
+function resetForm(){
+  const fpSel=document.getElementById('fp-select'); if(fpSel) fpSel.selectedIndex=0;
+  const fpInput=document.getElementById('fp'); if(fpInput) fpInput.value='';
+  document.getElementById('fp-custom-row').style.display='none';
+  document.getElementById('ft').value='';
+  document.getElementById('fn').value='';
+  document.getElementById('ftech').value='';
+  document.getElementById('fdim').value='';
+  document.getElementById('dim-row').style.display='none';
+  document.getElementById('fhours').value='';
+  document.getElementById('fcost').value='';
+  document.getElementById('fstatus').value='OPEN';
+  document.querySelectorAll('.stbtn').forEach(b=>b.className='stbtn');
+  document.getElementById('st-open').className='stbtn s-open';
+  setFormReadonly(false);
+  const cb=document.getElementById('cancelbtn'); if(cb) cb.style.display='none';
+  curSev=null;curPt=null;editId=null;
+  document.querySelectorAll('.sevbtn').forEach(b=>b.className='sevbtn');
+  document.getElementById('savebtn').disabled=true;
+  document.getElementById('savebtn').textContent=t('save');
+  document.getElementById('hint').textContent=t('hint');
+  document.getElementById('hint').style.color='';
+}
+
+// ── PINS ──
+function pinColor(sev){
+  return sev==='high'?'var(--accent2)':sev==='low'?'var(--ok)':'var(--accent)';
+}
+function pinBg(sev){
+  return sev==='high'?'rgba(192,57,43,.8)':sev==='low'?'rgba(39,174,96,.8)':'rgba(180,120,0,.8)';
+}
+
+function renderPins(){
+  const c=document.getElementById('pins');
+  const recs=getRecords();
+  Object.keys(PE).forEach(id=>{if(!recs.find(r=>r.id==id)){PE[id].remove();delete PE[id];}});
+  recs.forEach(r=>{
+    if(PE[r.id]) return;
+    const p=document.createElement('div');
+    p.className='pin'; p.id=`pin-${r.id}`; p.style.pointerEvents='all';
+    const col=pinColor(r.severity), bg=pinBg(r.severity);
+    p.innerHTML=`<div class="pc" style="border-color:${col};color:#fff;background:${bg}">${r.id}</div>`;
+    p.title=`${r.part} — ${r.type}`;
+    p.onclick=()=>viewRec(r.id);
+    c.appendChild(p); PE[r.id]=p;
+  });
+}
+
+let modelCenter = new THREE.Vector3();
+
+function updateModelCenter(){
+  if(model) new THREE.Box3().setFromObject(model).getCenter(modelCenter);
+}
+
+function isPinVisible(worldPos){
+  // Modelin merkezinden pine vektörü
+  const pinDir = worldPos.clone().sub(modelCenter).normalize();
+  // Kameradan modelin merkezine vektörü
+  const camDir = modelCenter.clone().sub(camera.position).normalize();
+  // İki vektörün dot product'ı pozitifse pin kameraya bakan tarafta
+  return pinDir.dot(camDir) < 0.2;
+}
+
+function updatePins(){
+  if(!model||!renderer) return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  getRecords().forEach(r=>{
+    if(!r.point||!PE[r.id]) return;
+    const wp=new THREE.Vector3(r.point.x,r.point.y,r.point.z);
+    const v=wp.clone(); v.project(camera);
+    const visible = v.z < 1 && isPinVisible(wp);
+    PE[r.id].style.display=visible?'block':'none';
+    PE[r.id].style.left=(v.x*.5+.5)*rect.width+'px';
+    PE[r.id].style.top=(v.y*-.5+.5)*rect.height+'px';
+  });
+  const tmp=document.getElementById('pin-temp');
+  if(tmp&&tmp._world){
+    const wp=tmp._world.clone();
+    const v=wp.clone(); v.project(camera);
+    const visible = v.z < 1 && isPinVisible(wp);
+    tmp.style.display=visible?'block':'none';
+    tmp.style.left=(v.x*.5+.5)*rect.width+'px';
+    tmp.style.top=(v.y*-.5+.5)*rect.height+'px';
+  }
+}
+
+// ── LIST ──
+function renderList(){
+  const el=document.getElementById('reclist');
+  let recs=getRecords();
+
+  // Grafik tüm kayıtlarla (filtre öncesi)
+  renderTypeChart(recs);
+
+  // Filtre
+  if(activeFilter!=='ALL') recs=recs.filter(r=>(r.status||'OPEN')===activeFilter);
+
+  if(!recs.length){el.innerHTML=`<div class="empty"><div class="ei">◈</div>${t('noRecords')}</div>`;return;}
+
+  // Sıralama: kritik üste, onarıldı/onaylananlar alta
+  recs = [...recs].sort((a,b)=>{
+    const aDone = a.status==='RESOLVED' || a.approved===true || a.approved===false;
+    const bDone = b.status==='RESOLVED' || b.approved===true || b.approved===false;
+    if(aDone !== bDone) return aDone ? 1 : -1;
+    const sevOrder = {high:0, mid:1, low:2};
+    const sevA = sevOrder[a.severity]??1;
+    const sevB = sevOrder[b.severity]??1;
+    if(sevA !== sevB) return sevA - sevB;
+    return a.id - b.id;
+  });
+  el.innerHTML=recs.map(r=>{
+    const score = priorityScore(r);
+    return `
+    <div class="ri" onclick="viewRec(${r.id})">
+      <div class="rn ${r.severity==='high'?'cr':r.severity==='low'?'ok':''}">#${r.id}</div>
+      <div class="rb">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <span class="rp" style="flex:1">${r.part}</span>
+          ${statusBadge(r.status||'OPEN')}
+        </div>
+        <div class="rm">${r.typeIndex!=null?T[lang].types[r.typeIndex]:r.type} · ${r.severity==='high'?t('high'):r.severity==='mid'?t('mid'):t('low')}${r.dimension?' · '+r.dimension+'mm':''}</div>
+        <div class="rm">${r.date}${r.tech?' · '+r.tech:''}</div>
+        ${r.cost?`<div class="rm" style="color:var(--accent)">${fmtCost(r.cost)}${r.hours?' · '+r.hours+'h':''}</div>`:''}
+        ${r.note?`<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4">${normalizeTagsToLang(r.note,lang)}</div>`:''}
+        ${r.photo?`<img src="${r.photo}" style="width:100%;max-height:80px;object-fit:cover;border-radius:2px;margin-top:6px">`:''}
+        ${r.log&&r.log.length>0?`
+          <div style="margin-top:5px;border-top:1px solid var(--border);padding-top:4px">
+            <div onclick="event.stopPropagation();this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;cursor:pointer;user-select:none">${t('logTitle')} ▾</div>
+            <div style="display:none">
+            ${r.log.map(l=>`
+              <div style="font-family:var(--mono);font-size:8px;color:var(--muted);line-height:1.7;display:flex;gap:4px">
+                <span style="color:var(--border)">▸</span>
+                <span>${l.date} — <span style="color:var(--text)">${ROLE_LABELS[lang]?.[l.role]||l.user||'—'}</span>
+                ${l.action==='CREATED'?`<span style="color:var(--ok)">${t('logCreated')}</span>`:
+                  l.action==='STATUS_CHANGE'?`${t('logStatusChange')} <span style="color:var(--accent)">${
+                    l.to==='OPEN'?T[lang].sOpen2:l.to==='IN_PROGRESS'?T[lang].sProgress2:T[lang].sResolved2
+                  }</span>`:
+                  l.action==='APPROVED'?`<span style="color:var(--ok)">✓ ${t('approved')}</span>`:
+                  l.action==='REJECTED'?`<span style="color:var(--accent2)">✕ ${t('rejected')}</span>`:
+                  `<span style="color:var(--muted)">${t('logUpdated')}</span>`}
+                </span>
+              </div>`).join('')}
+            </div>
+          </div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        ${currentRole==='mgr'
+          ?`<button class="rdel" onclick="event.stopPropagation();approveRec(${r.id})" style="color:var(--ok);font-size:15px" title="${t('approveBtn')}">✓</button>
+             <button class="rdel" onclick="event.stopPropagation();rejectRec(${r.id})" style="color:var(--accent2);font-size:15px" title="${t('rejectBtn')}">✕</button>`
+          :`<button class="rdel" onclick="event.stopPropagation();editRec(${r.id})" title="Düzenle" onmouseover="this.style.color='var(--ok)'" onmouseout="this.style.color=''">✏</button>
+             <button class="rdel" onclick="event.stopPropagation();deleteRec(${r.id})" title="Sil">✕</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function viewRec(id){
+  const r=getRecords().find(r=>r.id===id); if(!r||!r.point||!model) return;
+  const target=new THREE.Vector3(r.point.x,r.point.y,r.point.z);
+  // Modelin merkezinden pine bakan yön vektörü
+  const modelCenter=new THREE.Vector3();
+  new THREE.Box3().setFromObject(model).getCenter(modelCenter);
+  const dir=target.clone().sub(modelCenter).normalize();
+  // Kamerayı pin noktasının önüne, mevcut uzaklıkta konumlandır
+  const dist=camera.position.distanceTo(controls.target);
+  camera.position.copy(target.clone().add(dir.multiplyScalar(dist)));
+  controls.target.copy(target);
+  controls.update();
+}
+
+function editRec(id){
+  const r=getRecords().find(r=>r.id===id); if(!r) return;
+  if(r.point&&model){controls.target.lerp(new THREE.Vector3(r.point.x,r.point.y,r.point.z),.8);controls.update();}
+  // Parça — dropdown'da varsa seç, yoksa özel alana yaz
+  const fpSel=document.getElementById('fp-select');
+  const fpCustomRow=document.getElementById('fp-custom-row');
+  const fpInput=document.getElementById('fp');
+  if(fpSel){
+    const parts=PARTS[lang]||PARTS.tr;
+    const idx=parts.indexOf(r.part);
+    if(idx>=0){
+      fpSel.selectedIndex=idx+1;
+      if(fpCustomRow) fpCustomRow.style.display='none';
+      if(fpInput) fpInput.value=r.part;
+    } else {
+      fpSel.selectedIndex=parts.length; // Diğer...
+      if(fpCustomRow) fpCustomRow.style.display='block';
+      if(fpInput) fpInput.value=r.part;
+    }
+  }
+  document.getElementById('ft').value=r.type;
+  document.getElementById('fn').value=r.note||'';
+  document.getElementById('ftech').value=r.tech||'';
+  document.getElementById('fdim').value=r.dimension||'';
+  document.getElementById('fhours').value=r.hours||'';
+  document.getElementById('fcost').value=r.cost||'';
+  // Boyut alanı göster/gizle
+  const showDim=['Çatlak','Aşınma','Crack','Wear','Riss','Verschleiß'].includes(r.type)||(r.typeIndex===0||r.typeIndex===2);
+  document.getElementById('dim-row').style.display=showDim?'block':'none';
+  // Durum butonları
+  document.getElementById('fstatus').value=r.status||'OPEN';
+  document.querySelectorAll('.stbtn').forEach(b=>b.className='stbtn');
+  const sv=r.status||'OPEN';
+  if(sv==='OPEN') document.getElementById('st-open').className='stbtn s-open';
+  else if(sv==='IN_PROGRESS') document.getElementById('st-prog').className='stbtn s-prog';
+  else document.getElementById('st-done').className='stbtn s-done';
+  // Fotoğraf
+  if(r.photo){
+    currentPhoto=r.photo;
+    document.getElementById('photo-img').src=r.photo;
+    document.getElementById('photo-preview').style.display='block';
+    document.getElementById('photo-drop').style.display='none';
+  } else { removePhoto(); }
+  curSev=r.severity; curPt=r.point?{world:new THREE.Vector3(r.point.x,r.point.y,r.point.z)}:null;
+  editId=id;
+  document.querySelectorAll('.sevbtn').forEach(b=>b.className='sevbtn');
+  document.querySelectorAll('.sevbtn').forEach(b=>{
+    if(r.severity==='low'  && b.textContent===t('low'))  b.className='sevbtn al';
+    if(r.severity==='mid'  && b.textContent===t('mid'))  b.className='sevbtn am';
+    if(r.severity==='high' && b.textContent===t('high')) b.className='sevbtn ah';
+  });
+  // Kaydı kimin oluşturduğuna bak
+  const creatorRole = r.log?.find(l=>l.action==='CREATED')?.role || 'tech';
+  // Mühendis teknisyen kaydını düzenliyorsa → parça/tip/not readonly
+  const makeReadonly = currentRole==='eng' && creatorRole==='tech';
+  setFormReadonly(makeReadonly);
+  // İptal butonu göster
+  const cb=document.getElementById('cancelbtn'); if(cb) cb.style.display='block';
+  document.getElementById('savebtn').disabled=false;
+  document.getElementById('savebtn').textContent=t('updateBtn').replace('%n',id);
+  document.getElementById('hint').textContent=t('editing').replace('%n',id);
+  document.getElementById('hint').style.color='var(--accent)';
+  goTab('form');
+  showStatus(t('editing').replace('%n',id));
+}
+
+// ── SEVERİTY ──
+function setSev(l,b){
+  curSev=l;
+  document.querySelectorAll('.sevbtn').forEach(x=>x.className='sevbtn');
+  b.className=`sevbtn ${l==='low'?'al':l==='mid'?'am':'ah'}`;
+  const col=pinColor(l), bg=pinBg(l);
+  const targetPin=editId!==null?PE[editId]:document.getElementById('pin-temp');
+  if(targetPin){
+    const pc=targetPin.querySelector('.pc');
+    if(pc){pc.style.borderColor=col;pc.style.background=bg;}
+  }
+}
+
+function toggleReportDD(){
+  const m=document.getElementById('report-menu');
+  m.style.display=m.style.display==='none'?'block':'none';
+}
+function closeReportDD(){
+  document.getElementById('report-menu').style.display='none';
+}
+document.addEventListener('click',e=>{
+  if(!document.getElementById('report-dd')?.contains(e.target)) closeReportDD();
+});
+
+function setStatus(val, btn){
+  document.getElementById('fstatus').value=val;
+  document.querySelectorAll('.stbtn').forEach(b=>b.className='stbtn');
+  if(val==='OPEN') btn.className='stbtn s-open';
+  else if(val==='IN_PROGRESS') btn.className='stbtn s-prog';
+  else btn.className='stbtn s-done';
+}
+
+// ── KEStirimci BAKIM KURALLARI ──
+const PREDICTIVE_RULES = {
+  tr: {
+    'Sızıntı / Kaçak': { alert:'Alt valf contalarındaki basınç düşüşü sızıntılara yol açabilir. <b>[Valf_ID_402]</b> ve <b>[Conta_ID_118]</b> parçalarını kontrol edin.', parts:['Valf Contası','Basınç Sensörü'] },
+    'Titreşim / Gürültü': { alert:'Kronik titreşim rulman hasarına işaret edebilir. <b>[Rulman_ID_207]</b> ve motor montaj vidalarını kontrol edin.', parts:['Rulman Seti','Motor Montaj Takımı'] },
+    'Çatlak': { alert:'Yapısal çatlaklar yorgunluk hasarından kaynaklanabilir. Çevresindeki <b>5cm</b> alanı da tarayın.', parts:['Yapısal Epoksi','Kaynak Elektrodu'] },
+    'Aşınma': { alert:'Aşınma hızı normalin üzerindeyse yağlama sistemi kontrol edilmeli. <b>[Yağ_Pompası_ID_301]</b> basıncını ölçün.', parts:['Yağ Filtresi','Aşınma Plakası'] },
+    'Isıl Hasar': { alert:'Termal hasar soğutma sistemi arızasına işaret edebilir. <b>[Termostat_ID_055]</b> ve soğutma suyunu kontrol edin.', parts:['Termostat','Soğutma Suyu'] },
+    'Mekanik Arıza': { alert:'Mekanik arızalarda bağlantı elemanlarını kontrol edin. <b>[Bağlantı_ID_089]</b> torku doğrulayın.', parts:['Cıvata Seti','Tork Anahtarı'] }
+  },
+  en: {
+    'Leak': { alert:'Pressure drop in lower valve seals may cause leaks. Check <b>[Valve_ID_402]</b> and <b>[Gasket_ID_118]</b>.', parts:['Valve Gasket','Pressure Sensor'] },
+    'Vibration / Noise': { alert:'Chronic vibration may indicate bearing failure. Check <b>[Bearing_ID_207]</b> and mount bolts.', parts:['Bearing Set','Engine Mount Kit'] },
+    'Crack': { alert:'Structural cracks may result from fatigue. Scan <b>5cm</b> surrounding area.', parts:['Structural Epoxy','Welding Electrode'] },
+    'Wear': { alert:'Excessive wear rate may indicate lubrication failure. Measure <b>[Oil_Pump_ID_301]</b> pressure.', parts:['Oil Filter','Wear Plate'] },
+    'Thermal Damage': { alert:'Thermal damage may indicate cooling system failure. Check <b>[Thermostat_ID_055]</b> and coolant.', parts:['Thermostat','Coolant'] },
+    'Mechanical Failure': { alert:'Check fasteners. Verify torque on <b>[Connector_ID_089]</b>.', parts:['Bolt Set','Torque Wrench'] }
+  },
+  de: {
+    'Leck': { alert:'Druckabfall in unteren Ventildichtungen kann Lecks verursachen. <b>[Ventil_ID_402]</b> und <b>[Dichtung_ID_118]</b> prüfen.', parts:['Ventildichtung','Drucksensor'] },
+    'Vibration / Lärm': { alert:'Chronische Vibration kann auf Lagerschäden hinweisen. <b>[Lager_ID_207]</b> und Befestigungsschrauben prüfen.', parts:['Lagersatz','Motorhalterung'] },
+    'Riss': { alert:'Strukturrisse können auf Ermüdungsschäden hinweisen. <b>5cm</b> Umgebung scannen.', parts:['Strukturepoxid','Schweißelektrode'] },
+    'Verschleiß': { alert:'Übermäßiger Verschleiß kann auf Schmierfehler hinweisen. <b>[Ölpumpe_ID_301]</b> Druck messen.', parts:['Ölfilter','Verschleißplatte'] },
+    'Thermischer Schaden': { alert:'Thermischer Schaden kann auf Kühlsystemversagen hinweisen. <b>[Thermostat_ID_055]</b> prüfen.', parts:['Thermostat','Kühlmittel'] },
+    'Mechanischer Schaden': { alert:'Verbindungselemente prüfen. Drehmoment <b>[Verbindung_ID_089]</b> verifizieren.', parts:['Schraubensatz','Drehmomentschlüssel'] }
+  }
+};
+
+// Mock ERP stok verisi
+const MOCK_STOCK = {
+  'Valf Contası':      { qty:3,  lead:null },
+  'Basınç Sensörü':    { qty:0,  lead:14 },
+  'Rulman Seti':       { qty:1,  lead:null },
+  'Motor Montaj Takımı':{ qty:0, lead:21 },
+  'Yapısal Epoksi':    { qty:5,  lead:null },
+  'Kaynak Elektrodu':  { qty:2,  lead:null },
+  'Yağ Filtresi':      { qty:4,  lead:null },
+  'Aşınma Plakası':    { qty:0,  lead:7  },
+  'Termostat':         { qty:1,  lead:null },
+  'Soğutma Suyu':      { qty:0,  lead:3  },
+  'Cıvata Seti':       { qty:8,  lead:null },
+  'Tork Anahtarı':     { qty:1,  lead:null },
+  'Valve Gasket':      { qty:3,  lead:null },
+  'Pressure Sensor':   { qty:0,  lead:14 },
+  'Bearing Set':       { qty:1,  lead:null },
+  'Engine Mount Kit':  { qty:0,  lead:21 },
+  'Structural Epoxy':  { qty:5,  lead:null },
+  'Welding Electrode': { qty:2,  lead:null },
+  'Oil Filter':        { qty:4,  lead:null },
+  'Wear Plate':        { qty:0,  lead:7  },
+  'Coolant':           { qty:0,  lead:3  },
+  'Bolt Set':          { qty:8,  lead:null },
+  'Torque Wrench':     { qty:1,  lead:null },
+  'Ventildichtung':    { qty:3,  lead:null },
+  'Drucksensor':       { qty:0,  lead:14 },
+  'Lagersatz':         { qty:1,  lead:null },
+  'Motorhalterung':    { qty:0,  lead:21 },
+  'Strukturepoxid':    { qty:5,  lead:null },
+  'Schweißelektrode':  { qty:2,  lead:null },
+  'Ölfilter':          { qty:4,  lead:null },
+  'Verschleißplatte':  { qty:0,  lead:7  },
+  'Kühlmittel':        { qty:0,  lead:3  },
+  'Schraubensatz':     { qty:8,  lead:null },
+  'Drehmomentschlüssel':{ qty:1, lead:null }
+};
+
+function updatePredictive(typeIndex){
+  const alert=document.getElementById('predictive-alert');
+  const text=document.getElementById('predictive-text');
+  const stockCard=document.getElementById('stock-card');
+  const stockContent=document.getElementById('stock-content');
+  if(!alert||!text) return;
+
+  const RULE_KEYS = {
+    tr:['Çatlak','Sızıntı / Kaçak','Aşınma',null,'Mekanik Arıza','Titreşim / Gürültü','Isıl Hasar'],
+    en:['Crack','Leak','Wear',null,'Mechanical Failure','Vibration / Noise','Thermal Damage'],
+    de:['Riss','Leck','Verschleiß',null,'Mechanischer Schaden','Vibration / Lärm','Thermischer Schaden']
+  };
+
+  const key = RULE_KEYS[lang]?.[typeIndex];
+  const rules = PREDICTIVE_RULES[lang] || PREDICTIVE_RULES.tr;
+  const rule = key ? rules[key] : null;
+
+  if(rule){
+    text.innerHTML=rule.alert;
+    // Başlık çevir
+    const predTitleEl=alert.querySelector('div');
+    if(predTitleEl) predTitleEl.textContent=t('predTitle');
+    alert.style.display='block';
+    // Stok kartı
+    if(stockCard&&stockContent){
+      const stEl=document.getElementById('stock-title');
+      if(stEl) stEl.textContent=t('stockTitle');
+      const stockLines=rule.parts.map(part=>{
+        const s=MOCK_STOCK[part];
+        if(!s) return '';
+        return s.qty>0
+          ?`<div>▸ ${part}: <span style="color:var(--ok)">✓ ${s.qty} ${t('stockIn')}</span></div>`
+          :`<div>▸ ${part}: <span style="color:var(--accent2)">✗ ${t('stockOut')} — ${s.lead} ${t('stockLead')}</span></div>`;
+      }).join('');
+      stockContent.innerHTML=stockLines||'—';
+      stockCard.style.display='block';
+    }
+  } else {
+    alert.style.display='none';
+    if(stockCard) stockCard.style.display='none';
+  }
+}
+
+function cancelEdit(){
+  editId=null;
+  resetForm();
+  goTab('list');
+}
+
+function setFormReadonly(readonly){
+  const fields=['fp-select','fp','ft','fn','ftech'];
+  fields.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.disabled=readonly;
+    el.style.opacity=readonly?'0.5':'1';
+    el.style.pointerEvents=readonly?'none':'';
+  });
+  const qt=document.getElementById('quick-tags');
+  if(qt){ qt.style.opacity=readonly?'0.5':'1'; qt.style.pointerEvents=readonly?'none':''; }
+  document.querySelectorAll('.sevbtn').forEach(b=>{
+    b.disabled=readonly;
+    b.style.opacity=readonly?'0.5':'1';
+    b.style.pointerEvents=readonly?'none':'';
+  });
+}
+const PARTS = {
+  tr:['Motor Bloğu','Silindir Kapağı','Krank Mili','Kam Mili','Piston','Segman',
+      'Yağ Pompası','Su Pompası','Yakıt Pompası','Enjektör','Turbo Ünitesi',
+      'Egzoz Manifoldu','Emme Manifoldu','Zincir Gergi','Volan','Debriyaj',
+      'Conta Seti','Yağ Filtresi','Hava Filtresi','Yakıt Filtresi','Termostat',
+      'Radyatör','İnterkuler','EGR Valfi','Basınç Sensörü','Diğer...'],
+  en:['Engine Block','Cylinder Head','Crankshaft','Camshaft','Piston','Piston Ring',
+      'Oil Pump','Water Pump','Fuel Pump','Injector','Turbo Unit',
+      'Exhaust Manifold','Intake Manifold','Chain Tensioner','Flywheel','Clutch',
+      'Gasket Set','Oil Filter','Air Filter','Fuel Filter','Thermostat',
+      'Radiator','Intercooler','EGR Valve','Pressure Sensor','Other...'],
+  de:['Motorblock','Zylinderkopf','Kurbelwelle','Nockenwelle','Kolben','Kolbenring',
+      'Ölpumpe','Wasserpumpe','Kraftstoffpumpe','Einspritzventil','Turboeinheit',
+      'Abgaskrümmer','Ansaugkrümmer','Kettenspanner','Schwungrad','Kupplung',
+      'Dichtungssatz','Ölfilter','Luftfilter','Kraftstofffilter','Thermostat',
+      'Kühler','Ladeluftkühler','AGR-Ventil','Drucksensor','Sonstige...']
+};
+
+function onPartSelect(val){
+  const isOther = val.endsWith('...') || val==='';
+  const customRow=document.getElementById('fp-custom-row');
+  const fpInput=document.getElementById('fp');
+  if(isOther && val!==''){
+    customRow.style.display='block';
+    fpInput.value='';
+    fpInput.focus();
+  } else {
+    customRow.style.display='none';
+    if(fpInput) fpInput.value=val;
+  }
+}
+
+function initPartSelect(){
+  const sel=document.getElementById('fp-select');
+  if(!sel) return;
+  const parts=PARTS[lang]||PARTS.tr;
+  sel.innerHTML=`<option value="">${T[lang]?.select||'Seçin...'}</option>`
+    +parts.map(p=>`<option>${p}</option>`).join('');
+}
+
+// ── HASAR TİPİ DEĞİŞİNCE ──
+let curTypeIndex = -1;
+document.getElementById('ft').addEventListener('change', function(){
+  curTypeIndex = T['tr'].types.indexOf(this.value);
+  if(curTypeIndex<0) curTypeIndex = T['en'].types.indexOf(this.value);
+  if(curTypeIndex<0) curTypeIndex = T['de'].types.indexOf(this.value);
+  const showDim = curTypeIndex===0||curTypeIndex===2;
+  document.getElementById('dim-row').style.display = showDim ? 'block' : 'none';
+  updatePredictive(curTypeIndex);
+});
+
+// ── ZAMAN KAYDIRICIsı ──
+let timeSliderActive = false;
+
+function toggleTimeSlider(){
+  timeSliderActive = !timeSliderActive;
+  const bar = document.getElementById('time-slider-bar');
+  if(bar) bar.style.display = timeSliderActive ? 'block' : 'none';
+  if(!timeSliderActive){
+    document.getElementById('time-slider').value = 100;
+    onTimeSlide(100);
+  }
+}
+
+function onTimeSlide(val){
+  const recs = getRecords();
+  if(!recs.length) return;
+
+  // Tarihleri sırala
+  const sorted = [...recs].sort((a,b)=>{
+    try{
+      const da=new Date(a.date.split(' ')[0].split('.').reverse().join('-')+' '+a.date.split(' ')[1]);
+      const db=new Date(b.date.split(' ')[0].split('.').reverse().join('-')+' '+b.date.split(' ')[1]);
+      return da-db;
+    }catch(e){return 0;}
+  });
+
+  const idx = Math.max(0, Math.round((val/100)*(sorted.length-1)));
+  const cutoffRec = sorted[idx];
+  let cutoffDate;
+  try{
+    cutoffDate=new Date(cutoffRec.date.split(' ')[0].split('.').reverse().join('-')+' '+cutoffRec.date.split(' ')[1]);
+  }catch(e){ cutoffDate=new Date(); }
+
+  const label=document.getElementById('time-label');
+  if(val==100){
+    if(label) label.textContent='Tüm kayıtlar gösteriliyor';
+    // Tüm pinleri göster (normal renk)
+    recs.forEach(r=>{ if(PE[r.id]) PE[r.id].style.opacity='1'; });
+    return;
+  }
+  if(label) label.textContent=cutoffRec.date.split(' ')[0]+' tarihi itibarıyla · '+(idx+1)+'/'+recs.length+' kayıt';
+
+  // Pin görünürlüğünü tarihe göre ayarla
+  recs.forEach(r=>{
+    if(!PE[r.id]) return;
+    let recDate;
+    try{
+      recDate=new Date(r.date.split(' ')[0].split('.').reverse().join('-')+' '+r.date.split(' ')[1]);
+    }catch(e){ recDate=new Date(); }
+    if(recDate<=cutoffDate){
+      PE[r.id].style.opacity='1';
+      // O tarihte çözülmüş mü?
+      if(r.resolvedAt){
+        try{
+          const rd=new Date(r.resolvedAt.split(' ')[0].split('.').reverse().join('-'));
+          if(rd<=cutoffDate){
+            PE[r.id].querySelector('.pc').style.background='rgba(39,174,96,.8)';
+          } else {
+            PE[r.id].querySelector('.pc').style.background='';
+          }
+        }catch(e){}
+      }
+    } else {
+      PE[r.id].style.opacity='0';
+    }
+  });
+}
+
+// ── FİLTRE ──
+let activeFilter = 'ALL';
+function setFilter(f, btn){
+  activeFilter = f;
+  document.querySelectorAll('.fltbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+// ── ÖNCELİK SKORU ──
+// Aciliyet (3/2/1) × Maliyet faktörü × Yaş faktörü
+function priorityScore(r){
+  const sevScore = r.severity==='high'?3:r.severity==='mid'?2:1;
+  const costScore = r.cost ? Math.min(parseFloat(r.cost)/10000, 3) : 0;
+  let ageScore = 1;
+  try{
+    const d=new Date(r.date.split(' ')[0].split('.').reverse().join('-'));
+    const days=(Date.now()-d)/(1000*60*60*24);
+    ageScore = Math.min(days/7, 3); // Her 7 günde +1, max 3
+  }catch(e){}
+  return sevScore * (1 + costScore) * (1 + ageScore);
+}
+
+// ── HASAR TİPİ GRAFİĞİ ──
+function renderTypeChart(recs){
+  const el = document.getElementById('type-chart');
+  if(!el || !recs.length){ if(el) el.innerHTML=''; return; }
+  const counts = {};
+  recs.forEach(r=>{
+    const label = r.typeIndex!=null ? T[lang].types[r.typeIndex] : r.type;
+    counts[label] = (counts[label]||0) + 1;
+  });
+  const max = Math.max(...Object.values(counts));
+  const bars = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${k}</div>
+      <div style="flex:1;background:var(--border);border-radius:1px;height:6px">
+        <div style="width:${Math.round(v/max*100)}%;background:var(--accent);height:100%;border-radius:1px;transition:width .3s"></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text);width:12px;text-align:right">${v}</div>
+    </div>`).join('');
+  el.innerHTML=`<div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">${t('chartTitle')}</div>${bars}
+    <div style="border-bottom:1px solid var(--border);margin:8px 0"></div>`;
+}
+
+// ── CURRENCY ──
+// Para birimi lokasyona göre: TR=₺, DE=€, EN=$
+const CURRENCY = { tr:'₺', en:'$', de:'€' };
+function cur(){ return CURRENCY[lang] || '₺'; }
+function fmtCost(val){
+  const n = parseFloat(val);
+  if(isNaN(n)) return '';
+  // Locale formatı: TR=tr-TR, DE=de-DE, EN=en-US
+  const locale = lang==='tr'?'tr-TR':lang==='de'?'de-DE':'en-US';
+  return lang==='tr'
+    ? n.toLocaleString(locale) + ' ' + cur()
+    : cur() + n.toLocaleString(locale);
+}
+let currentRole = localStorage.getItem('mhs_role') || 'tech';
+
+const ROLE_LABELS = {
+  tr:{ tech:'TEKNİSYEN', eng:'MÜHENDİS', mgr:'YÖNETİCİ' },
+  en:{ tech:'TECHNICIAN', eng:'ENGINEER', mgr:'MANAGER' },
+  de:{ tech:'TECHNIKER', eng:'INGENIEUR', mgr:'MANAGER' }
+};
+
+function setRole(role, btn){
+  currentRole = role;
+  localStorage.setItem('mhs_role', role);
+  applyRole();
+}
+
+function applyRole(){
+  const r = currentRole;
+
+  // Rol butonlarını güncelle
+  ['tech','eng','mgr'].forEach(id=>{
+    const b = document.getElementById('role-'+id);
+    if(!b) return;
+    b.className = 'role-btn';
+    if(r === id) b.className += ` active-${id}`;
+  });
+
+  // Rol buton etiketlerini çevir
+  const rl = ROLE_LABELS[lang] || ROLE_LABELS.tr;
+  const rt = document.getElementById('role-tech'); if(rt) rt.textContent = rl.tech;
+  const re = document.getElementById('role-eng');  if(re) re.textContent = rl.eng;
+  const rm = document.getElementById('role-mgr');  if(rm) rm.textContent = rl.mgr;
+
+  // Teknisyen: form açık, RAPOR/TEMİZLE gizli, ONARILDI butonu gizli
+  // Mühendis: her şey açık
+  // Yönetici: form gizli, sadece liste + rapor
+
+  const formPanel = document.getElementById('tab-form');
+  const listTab   = document.querySelectorAll('.tbtn')[1];
+  const formTab   = document.querySelectorAll('.tbtn')[0];
+  const reportDD  = document.getElementById('report-dd');
+  const clearBtn  = document.getElementById('btn-clear');
+  const stDone    = document.getElementById('st-done');
+  const costSection = document.getElementById('cost-section');
+  const clearSection = document.getElementById('clear-section');
+  const typeChart = document.getElementById('type-chart');
+
+  if(r === 'tech'){
+    if(formTab) formTab.style.display = '';
+    if(reportDD) reportDD.style.display = 'none';
+    if(clearBtn) clearBtn.style.display = 'none';
+    if(stDone)  stDone.style.display = 'none';
+    if(costSection) costSection.style.display = 'none';
+    if(clearSection) clearSection.style.display = 'none';
+    if(typeChart) typeChart.style.display = 'none';
+  } else if(r === 'eng'){
+    if(formTab) formTab.style.display = '';
+    if(reportDD) reportDD.style.display = '';
+    if(clearBtn) clearBtn.style.display = 'none';
+    if(stDone)  stDone.style.display = '';
+    if(costSection) costSection.style.display = '';
+    if(clearSection) clearSection.style.display = '';
+    if(typeChart) typeChart.style.display = '';
+  } else if(r === 'mgr'){
+    if(formTab) formTab.style.display = 'none';
+    if(reportDD) reportDD.style.display = '';
+    if(clearBtn) clearBtn.style.display = 'none';
+    if(stDone)  stDone.style.display = 'none';
+    if(costSection) costSection.style.display = 'none';
+    if(clearSection) clearSection.style.display = 'none';
+    if(typeChart) typeChart.style.display = '';
+    goTab('list');
+  }
+
+  // hdr-btns görünürlüğü — yönetici ve mühendis rapor görebilir
+  const hdrBtns = document.getElementById('hdr-btns');
+  if(hdrBtns && activeMotorId){
+    hdrBtns.style.display = (r === 'tech') ? 'none' : 'flex';
+  }
+  // Kayıt listesini yenile — butonlar role göre değişsin
+  if(activeMotorId) renderList();
+}
+
+// ── QUICK TAGS ──
+const QUICK_TAGS = {
+  tr:['#ParçaDeğişimi','#GözlemAltında','#AcilMüdahale','#RutinKontrol','#EkipmanGerekli'],
+  en:['#PartReplacement','#UnderObservation','#UrgentAction','#RoutineCheck','#EquipmentNeeded'],
+  de:['#TeilAustausch','#BeobachtungErforderlich','#SofortMaßnahme','#Routinekontrolle','#AusrüstungBenötigt']
+};
+let activeTags = [];
+
+function initQuickTags(){
+  const c=document.getElementById('quick-tags'); if(!c) return;
+  c.innerHTML='';
+  activeTags=[];
+  QUICK_TAGS[lang||'tr'].forEach(tag=>{
+    const b=document.createElement('button');
+    b.className='qtag'; b.textContent=tag;
+    b.onclick=()=>toggleTag(b,tag);
+    c.appendChild(b);
+  });
+}
+
+function toggleTag(btn,tag){
+  btn.classList.toggle('on');
+  if(activeTags.includes(tag)) activeTags=activeTags.filter(t=>t!==tag);
+  else activeTags.push(tag);
+  const fn=document.getElementById('fn');
+  const base=fn.value.replace(/#\S+/g,'').trim();
+  fn.value=(base+(activeTags.length?' '+activeTags.join(' '):'')).trim();
+}
+
+// ── PHOTO ──
+let currentPhoto = null;
+
+function handlePhoto(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    currentPhoto=e.target.result;
+    document.getElementById('photo-img').src=currentPhoto;
+    document.getElementById('photo-preview').style.display='block';
+    document.getElementById('photo-drop').style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto(){
+  currentPhoto=null;
+  document.getElementById('photo-preview').style.display='none';
+  document.getElementById('photo-drop').style.display='block';
+  document.getElementById('photo-input').value='';
+}
+
+// ── STATUS LABEL ──
+function statusBadge(s){
+  if(s==='RESOLVED') return `<span class="status-badge s-done">● ${T[lang]?.sResolved2||'Onarıldı'}</span>`;
+  if(s==='IN_PROGRESS') return `<span class="status-badge s-prog">● ${T[lang]?.sProgress2||'İşlemde'}</span>`;
+  return `<span class="status-badge s-open">● ${T[lang]?.sOpen2||'Açık'}</span>`;
+}
+
+// ── PDF EXPORT ──
+function exportPDF(){
+  const m=getMotor(activeMotorId); if(!m) return;
+  const recs=getRecords();
+  if(!recs.length){showStatus(t('noRecords'));return;}
+
+  const sevLabel=s=>s==='high'?t('high'):s==='mid'?t('mid'):t('low');
+  const statusLabel=s=>s==='RESOLVED'?T[lang].sResolved2:s==='IN_PROGRESS'?T[lang].sProgress2:T[lang].sOpen2;
+
+  const pdfLabels = {
+    tr:{ title:'Hasar Raporu', createdAt:'Oluşturulma', total:'Toplam', critical:'Kritik',
+         part:'Parça Adı', damage:'Hasar Tipi', severity:'Aciliyet', status:'Durum',
+         size:'Boyut', tech:'Teknisyen', date:'Tarih', note:'Not', photo:'Fotoğraf' },
+    en:{ title:'Damage Report', createdAt:'Created', total:'Total', critical:'Critical',
+         part:'Part Name', damage:'Damage Type', severity:'Severity', status:'Status',
+         size:'Size', tech:'Technician', date:'Date', note:'Note', photo:'Photo' },
+    de:{ title:'Schadenbericht', createdAt:'Erstellt', total:'Gesamt', critical:'Kritisch',
+         part:'Bauteilname', damage:'Schadenstyp', severity:'Dringlichkeit', status:'Status',
+         size:'Größe', tech:'Techniker', date:'Datum', note:'Notiz', photo:'Foto' }
+  };
+  const PL = pdfLabels[lang] || pdfLabels.tr;
+
+  const rows=recs.map(r=>`
+    <tr>
+      <td>#${r.id}</td>
+      <td>${r.part}</td>
+      <td>${r.typeIndex!=null?T[lang].types[r.typeIndex]:r.type}</td>
+      <td>${sevLabel(r.severity)}</td>
+      <td>${statusLabel(r.status||'OPEN')}</td>
+      <td>${r.dimension?r.dimension+' mm':'—'}</td>
+      <td>${r.tech||'—'}</td>
+      <td>${r.date||'—'}</td>
+      <td>${normalizeTagsToLang(r.note||'—', lang)}</td>
+      ${r.photo?`<td><img src="${r.photo}" style="width:60px;height:40px;object-fit:cover;border-radius:2px"></td>`:'<td>—</td>'}
+    </tr>`).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a1a;padding:24px}
+    h1{font-size:16px;margin-bottom:4px}
+    .meta{color:#666;font-size:10px;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;font-size:10px}
+    th{background:#1a1a1a;color:#fff;padding:6px 8px;text-align:left}
+    td{padding:5px 8px;border-bottom:1px solid #e0e0e0;vertical-align:top}
+    tr:nth-child(even) td{background:#f8f8f8}
+  </style></head><body>
+  <h1>${m.name} — ${PL.title}</h1>
+  <div class="meta">${PL.createdAt}: ${new Date().toLocaleString()} | ${PL.total}: ${recs.length} | ${PL.critical}: ${recs.filter(r=>r.severity==='high').length}</div>
+  <table>
+    <thead><tr>
+      <th>#</th><th>${PL.part}</th><th>${PL.damage}</th>
+      <th>${PL.severity}</th><th>${PL.status}</th><th>${PL.size}</th>
+      <th>${PL.tech}</th><th>${PL.date}</th><th>${PL.note}</th><th>${PL.photo}</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  </body></html>`;
+
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>w.print(),500);
+}
+const SEV_ENUM = { low:'LOW', mid:'MEDIUM', high:'CRITICAL' };
+
+const TYPE_KEYS = ['CRACK','LEAK','WEAR','CORROSION','MECHANICAL_FAILURE',
+  'VIBRATION','THERMAL_DAMAGE','FOREIGN_OBJECT','OTHER'];
+
+// Tüm dillerdeki etiketlerin İngilizce karşılıkları
+const TAG_MAP = {
+  '#ParçaDeğişimi':'#PartReplacement','#GözlemAltında':'#UnderObservation',
+  '#AcilMüdahale':'#UrgentAction','#RutinKontrol':'#RoutineCheck',
+  '#EkipmanGerekli':'#EquipmentNeeded',
+  '#TeilAustausch':'#PartReplacement','#BeobachtungErforderlich':'#UnderObservation',
+  '#SofortMaßnahme':'#UrgentAction','#Routinekontrolle':'#RoutineCheck',
+  '#AusrüstungBenötigt':'#EquipmentNeeded'
+};
+
+// Tüm dillerdeki etiketleri seçili dile çevir
+function normalizeTagsToLang(note, targetLang){
+  if(!note) return '';
+  const allTags = [
+    ['#ParçaDeğişimi','#PartReplacement','#TeilAustausch'],
+    ['#GözlemAltında','#UnderObservation','#BeobachtungErforderlich'],
+    ['#AcilMüdahale','#UrgentAction','#SofortMaßnahme'],
+    ['#RutinKontrol','#RoutineCheck','#Routinekontrolle'],
+    ['#EkipmanGerekli','#EquipmentNeeded','#AusrüstungBenötigt']
+  ];
+  const langIdx = {tr:0, en:1, de:2};
+  const idx = langIdx[targetLang] ?? 0;
+  let result = note;
+  allTags.forEach(group=>{
+    group.forEach(tag=>{
+      const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      result = result.replace(new RegExp(escaped,'g'), group[idx]);
+    });
+  });
+  return result;
+}
+
+function normalizeTagsToEN(note){
+  if(!note) return '';
+  let result = note;
+  Object.entries(TAG_MAP).forEach(([tr, en])=>{
+    result = result.replace(new RegExp(tr.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'), en);
+  });
+  return result;
+}
+
+function exportJSON(){
+  const m=getMotor(activeMotorId); if(!m) return;
+  const recs=getRecords();
+  if(!recs.length){showStatus(t('noRecords'));return;}
+
+  const cleanRecs = recs.map(r=>({
+    id: r.id,
+    part: r.part,
+    damage_type: r.typeIndex!=null ? TYPE_KEYS[r.typeIndex] : r.type.toUpperCase().replace(/\s+/g,'_'),
+    severity: SEV_ENUM[r.severity] || r.severity.toUpperCase(),
+    note: normalizeTagsToEN(r.note || ''),
+    technician: r.tech || '',
+    estimated_hours: r.hours ? parseFloat(r.hours) : null,
+    estimated_cost: r.cost ? parseFloat(r.cost) : null,
+    currency: CURRENCY[lang]||'₺',
+    timestamp: r.date ? new Date(r.date.split(' ')[0].split('.').reverse().join('-')+'T'+r.date.split(' ')[1]).toISOString() : new Date().toISOString(),
+    coordinates: r.point ? {
+      x: parseFloat(r.point.x.toFixed(4)),
+      y: parseFloat(r.point.y.toFixed(4)),
+      z: parseFloat(r.point.z.toFixed(4))
+    } : null
+  }));
+
+  const report = {
+    schema_version: '2.0',
+    system: 'Motor Damage Inspection System',
+    engine_model: m.name,
+    exported_at: new Date().toISOString(),
+    total_records: recs.length,
+    critical_count: recs.filter(r=>r.severity==='high').length,
+    records: cleanRecs
+  };
+
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
+  a.download=`${m.name.toLowerCase()}-damage-report-${Date.now()}.json`;
+  a.click();
+  showStatus(t('jsonBtn'));
+}
+
+// ── UI ──
+function switchTab(n,btn){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+n).classList.add('active');
+}
+function goTab(n){
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active');
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',b.textContent.includes(n==='form'?'HASAR':'KAYIT')));
+}
+let st;
+function showStatus(msg){
+  const el=document.getElementById('sbar');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(st);st=setTimeout(()=>el.classList.remove('show'),3000);
+}
+function updateHeader(){
+  const recs=getRecords();
+  document.getElementById('hc').textContent=recs.length;
+  document.getElementById('hcr').textContent=recs.filter(r=>r.severity==='high').length;
+}
+
+// ── I18N ──
+const T = {
+  tr:{
+    back:'GERİ', records:'KAYIT', critical:'KRİTİK', model:'MODEL',
+    jsonBtn:'JSON', pdfBtn:'PDF', reportBtn:'▼ RAPOR', clearBtn:'TEMİZLE',
+    homeTitle:'// MOTOR MODELLERİ', newMotor:'YENİ MOTOR',
+    modalTitle:'// YENİ MOTOR EKLE', motorName:'MOTOR ADI',
+    glbFile:'GLB DOSYASI', dropText:'Sürükle bırak veya tıkla',
+    cancel:'İPTAL', add:'EKLE',
+    tabForm:'HASAR GİR', tabList:'KAYITLAR',
+    partName:'PARÇA ADI', damageType:'HASAR TİPİ', partPh:'Motor bloğu, turbo, egzoz...',
+    partCustom:'ÖZEL PARÇA ADI',
+    severity:'// ACİLİYET SEVİYESİ', note:'// NOT', notePh:'Gözlem detayları...',
+    tech:'TEKNİSYEN', techPh:'Ad Soyad',
+    low:'DÜŞÜK', mid:'ORTA', high:'KRİTİK',
+    save:'KAYDET', hint:'▶ 3D modele tıklayarak nokta seçin',
+    photoLabel:'// FOTOĞRAF', photoBtn:'📷 FOTOĞRAF EKLE', dimPh:'örn. 12', dimLabel:'BOYUT (mm)',
+    statusLabel:'DURUM', techSection:'// TEKNİSYEN',
+    costLabel:'// MALİYET TAHMİNİ', hoursLabel:'ADAM/SAAT', costFieldLabel:'MALİYET (₺)', hoursPh:'örn. 4', costPh:'örn. 5000',
+    searchPh:'Ara...',
+    logTitle:'// GEÇMİŞ', logCreated:'kaydı oluşturdu', logUpdated:'kaydı güncelledi', logStatusChange:'statüsünü şu şekilde değiştirdi:', logMade:'',
+    fltAll:'HEPSİ', fltOpen:'AÇIK', fltProg:'İŞLEMDE', fltDone:'ONARILDI',
+    chartTitle:'// HASAR DAĞILIMI',
+    approveBtn:'✓ ONAYLA', rejectBtn:'✕ REDDET', approved:'ONAYLANDI', rejected:'REDDEDİLDİ',
+    clearToggle:'// tüm kayıtları sil', clearPrompt:'Motor adını yaz ve onayla:', clearConfirmBtn:'ONAYLA', clearCancelBtn:'İPTAL',
+    stockTitle:'// YEDEK PARÇA DURUMU', stockIn:'adet mevcut', stockOut:'Stokta yok', stockLead:'gün tedarik',
+    predTitle:'💡 SİSTEM ÖNERİSİ',
+    maintWarning:'G kontrol yok',
+    kpiTitle:'// SİSTEM ÖZETİ', kpiMotor:'MOTOR', kpiRecord:'KAYIT', kpiCritical:'AÇIK KRİTİK', kpiCost:'TAHMİNİ MALİYET', kpiMttr:'ORT. ÇÖZÜM', kpiDay:'GÜN',
+    cardCritical:'KRİTİK HASAR', cardCost:'MALİYET',
+    sOpen:'🔴 Açık', sProgress:'🟡 İşlemde', sResolved:'🟢 Onarıldı',
+    sOpen2:'Açık', sProgress2:'İşlemde', sResolved2:'Onarıldı',
+    hudTitle:'// DİJİTAL İKİZ',
+    hudTurn:'SOL SÜRÜKLE: DÖNDÜR', hudPan:'SAĞ SÜRÜKLE: PAN',
+    hudZoom:'SCROLL: ZOOM', hudClick:'SOL TIK:', hudMark:'HASAR İŞARETLE',
+    logoText:'HASAR/SİSTEM',
+    loading:'MODEL YÜKLENİYOR', loaded:'✓ MODEL YÜKLENDİ — TIKLAYARAK HASAR İŞARETLEYİN',
+    noRecords:'Henüz kayıt yok.',
+    pointSelected:'Nokta %n seçildi',
+    editing:'✏ #%n düzenleniyor',
+    updateBtn:'#%n GÜNCELLE',
+    saved:'✓ KAYIT #%n KAYDEDİLDİ',
+    updated:'✓ KAYIT GÜNCELLENDİ',
+    markPoint:'ACİLİYET SEVİYESİ SEÇİN',
+    needPart:'PARÇA ADI GİRİN',
+    needType:'HASAR TİPİ SEÇİN',
+    needSev:'ACİLİYET SEVİYESİ SEÇİN',
+    clickModel:'MODELE TIKLAYIN',
+    types:['Çatlak','Sızıntı / Kaçak','Aşınma','Korozyon / Pas','Mekanik Arıza','Titreşim / Gürültü','Isıl Hasar','Yabancı Cisim','Diğer'],
+    select:'Seçin...'
+  },
+  en:{
+    back:'BACK', records:'RECORDS', critical:'CRITICAL', model:'MODEL',
+    jsonBtn:'JSON', pdfBtn:'PDF', reportBtn:'▼ REPORT', clearBtn:'CLEAR',
+    homeTitle:'// ENGINE MODELS', newMotor:'NEW ENGINE',
+    modalTitle:'// ADD NEW ENGINE', motorName:'ENGINE NAME',
+    glbFile:'GLB FILE', dropText:'Drag & drop or click',
+    cancel:'CANCEL', add:'ADD',
+    tabForm:'ADD DAMAGE', tabList:'RECORDS',
+    partName:'PART NAME', damageType:'DAMAGE TYPE', partPh:'Engine block, turbo, exhaust...',
+    partCustom:'CUSTOM PART NAME',
+    severity:'// SEVERITY', note:'// NOTE', notePh:'Observation details...',
+    tech:'TECHNICIAN', techPh:'Full Name',
+    low:'LOW', mid:'MEDIUM', high:'CRITICAL',
+    save:'SAVE', hint:'▶ Click on 3D model to select point',
+    photoLabel:'// PHOTO', photoBtn:'📷 ADD PHOTO', dimPh:'e.g. 12', dimLabel:'SIZE (mm)',
+    statusLabel:'STATUS', techSection:'// TECHNICIAN',
+    costLabel:'// COST ESTIMATE', hoursLabel:'MAN-HOURS', costFieldLabel:'COST (€)', hoursPh:'e.g. 4', costPh:'e.g. 5000',
+    searchPh:'Search...',
+    logTitle:'// HISTORY', logCreated:'created this record', logUpdated:'updated this record', logStatusChange:'changed status to', logMade:'',
+    fltAll:'ALL', fltOpen:'OPEN', fltProg:'IN PROGRESS', fltDone:'RESOLVED',
+    chartTitle:'// DAMAGE DISTRIBUTION',
+    approveBtn:'✓ APPROVE', rejectBtn:'✕ REJECT', approved:'APPROVED', rejected:'REJECTED',
+    clearToggle:'// delete all records', clearPrompt:'Type engine name to confirm:', clearConfirmBtn:'CONFIRM', clearCancelBtn:'CANCEL',
+    stockTitle:'// SPARE PARTS STATUS', stockIn:'in stock', stockOut:'Out of stock', stockLead:'day lead time',
+    predTitle:'💡 SYSTEM SUGGESTION',
+    maintWarning:'D no inspection',
+    kpiTitle:'// SYSTEM SUMMARY', kpiMotor:'ENGINES', kpiRecord:'RECORDS', kpiCritical:'OPEN CRITICAL', kpiCost:'EST. COST', kpiMttr:'AVG. RESOLUTION', kpiDay:'DAY',
+    cardCritical:'CRITICAL', cardCost:'COST',
+    sOpen:'🔴 Open', sProgress:'🟡 In Progress', sResolved:'🟢 Resolved',
+    sOpen2:'Open', sProgress2:'In Progress', sResolved2:'Resolved',
+    hudTitle:'// DIGITAL TWIN',
+    hudTurn:'LEFT DRAG: ROTATE', hudPan:'RIGHT DRAG: PAN',
+    hudZoom:'SCROLL: ZOOM', hudClick:'LEFT CLICK:', hudMark:'MARK DAMAGE',
+    logoText:'DAMAGE/SYSTEM',
+    loading:'LOADING MODEL', loaded:'✓ MODEL LOADED — CLICK TO MARK DAMAGE',
+    noRecords:'No records yet.',
+    pointSelected:'Point %n selected',
+    editing:'✏ #%n editing',
+    updateBtn:'#%n UPDATE',
+    saved:'✓ RECORD #%n SAVED',
+    updated:'✓ RECORD UPDATED',
+    needPart:'ENTER PART NAME',
+    needType:'SELECT DAMAGE TYPE',
+    needSev:'SELECT SEVERITY',
+    clickModel:'CLICK ON MODEL',
+    types:['Crack','Leak','Wear','Corrosion / Rust','Mechanical Failure','Vibration / Noise','Thermal Damage','Foreign Object','Other'],
+    select:'Select...'
+  },
+  de:{
+    back:'ZURÜCK', records:'EINTRÄGE', critical:'KRITISCH', model:'MODELL',
+    jsonBtn:'JSON', pdfBtn:'PDF', reportBtn:'▼ BERICHT', clearBtn:'LÖSCHEN',
+    homeTitle:'// MOTORMODELLE', newMotor:'NEUER MOTOR',
+    modalTitle:'// NEUEN MOTOR HINZUFÜGEN', motorName:'MOTORNAME',
+    glbFile:'GLB DATEI', dropText:'Ziehen & Ablegen oder klicken',
+    cancel:'ABBRECHEN', add:'HINZUFÜGEN',
+    tabForm:'SCHADEN EINGEBEN', tabList:'EINTRÄGE',
+    partName:'BAUTEILNAME', damageType:'SCHADENSTYP', partPh:'Motorblock, Turbo, Auspuff...',
+    partCustom:'EIGENER BAUTEILNAME',
+    severity:'// DRINGLICHKEIT', note:'// NOTIZ', notePh:'Beobachtungsdetails...',
+    tech:'TECHNIKER', techPh:'Vor- und Nachname',
+    low:'NIEDRIG', mid:'MITTEL', high:'KRITISCH',
+    save:'SPEICHERN', hint:'▶ Auf 3D-Modell klicken um Punkt zu wählen',
+    photoLabel:'// FOTO', photoBtn:'📷 FOTO HINZUFÜGEN', dimPh:'z.B. 12', dimLabel:'GRÖẞE (mm)',
+    statusLabel:'STATUS', techSection:'// TECHNIKER',
+    costLabel:'// KOSTENSCHÄTZUNG', hoursLabel:'MANNSTUNDEN', costFieldLabel:'KOSTEN (€)', hoursPh:'z.B. 4', costPh:'z.B. 5000',
+    searchPh:'Suchen...',
+    logTitle:'// VERLAUF', logCreated:'Eintrag erstellt', logUpdated:'Eintrag aktualisiert', logStatusChange:'Status geändert zu', logMade:'',
+    fltAll:'ALLE', fltOpen:'OFFEN', fltProg:'IN BEARBEITUNG', fltDone:'BEHOBEN',
+    chartTitle:'// SCHADENSVERTEILUNG',
+    approveBtn:'✓ GENEHMIGEN', rejectBtn:'✕ ABLEHNEN', approved:'GENEHMIGT', rejected:'ABGELEHNT',
+    clearToggle:'// alle Einträge löschen', clearPrompt:'Motorname eingeben und bestätigen:', clearConfirmBtn:'BESTÄTIGEN', clearCancelBtn:'ABBRECHEN',
+    stockTitle:'// ERSATZTEILE STATUS', stockIn:'auf Lager', stockOut:'Nicht vorrätig', stockLead:'Tage Lieferzeit',
+    predTitle:'💡 SYSTEMEMPFEHLUNG',
+    maintWarning:'T keine Prüfung',
+    kpiTitle:'// SYSTEMÜBERSICHT', kpiMotor:'MOTOREN', kpiRecord:'EINTRÄGE', kpiCritical:'OFFENE KRITISCH', kpiCost:'GESCH. KOSTEN', kpiMttr:'DURCHSCHN. LÖSUNG', kpiDay:'TAG',
+    cardCritical:'KRITISCH', cardCost:'KOSTEN',
+    sOpen:'🔴 Offen', sProgress:'🟡 In Bearbeitung', sResolved:'🟢 Behoben',
+    sOpen2:'Offen', sProgress2:'In Bearbeitung', sResolved2:'Behoben',
+    hudTitle:'// DIGITALER ZWILLING',
+    hudTurn:'LINKS ZIEHEN: DREHEN', hudPan:'RECHTS ZIEHEN: SCHWENKEN',
+    hudZoom:'SCROLL: ZOOM', hudClick:'LINKS KLICK:', hudMark:'SCHADEN MARKIEREN',
+    logoText:'SCHADEN/SYSTEM',
+    loading:'MODELL WIRD GELADEN', loaded:'✓ MODELL GELADEN — KLICKEN UM SCHADEN ZU MARKIEREN',
+    noRecords:'Noch keine Einträge.',
+    pointSelected:'Punkt %n ausgewählt',
+    editing:'✏ #%n wird bearbeitet',
+    updateBtn:'#%n AKTUALISIEREN',
+    saved:'✓ EINTRAG #%n GESPEICHERT',
+    updated:'✓ EINTRAG AKTUALISIERT',
+    needPart:'BAUTEILNAME EINGEBEN',
+    needType:'SCHADENSTYP WÄHLEN',
+    needSev:'DRINGLICHKEIT WÄHLEN',
+    clickModel:'AUF MODELL KLICKEN',
+    types:['Riss','Leck','Verschleiß','Korrosion / Rost','Mechanischer Defekt','Vibration / Lärm','Thermischer Schaden','Fremdkörper','Sonstiges'],
+    select:'Auswählen...'
+  }
+};
+
+let lang = localStorage.getItem('mhs_lang') || 'tr';
+
+function setLang(l){
+  lang=l;
+  localStorage.setItem('mhs_lang',l);
+  applyLang();
+  renderHome();
+  renderList();
+}
+
+function t(key){ return T[lang][key] || T['tr'][key] || key; }
+
+function applyLang(){
+  const L=T[lang];
+  // Dil butonları
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent===lang.toUpperCase());
+  });
+  // Header
+  const backSpan=document.querySelector('[data-i="back"]'); if(backSpan) backSpan.textContent=L.back;
+  const recSpan=document.querySelector('[data-i="records"]'); if(recSpan) recSpan.textContent=L.records;
+  const crSpan=document.querySelector('[data-i="critical"]'); if(crSpan) crSpan.textContent=L.critical;
+  const mdSpan=document.querySelector('[data-i="model"]'); if(mdSpan) mdSpan.textContent=L.model;
+  const brep=document.getElementById('btn-report'); if(brep) brep.textContent=L.reportBtn;
+  const djson=document.getElementById('dd-json'); if(djson) djson.textContent=L.jsonBtn;
+  const dpdf=document.getElementById('dd-pdf'); if(dpdf) dpdf.textContent=L.pdfBtn;
+  const bclr=document.getElementById('btn-clear'); if(bclr) bclr.textContent=L.clearBtn;
+  // Tabs
+  const tabs=document.querySelectorAll('.tbtn');
+  if(tabs[0]) tabs[0].textContent=L.tabForm;
+  if(tabs[1]) tabs[1].textContent=L.tabList;
+  // Section labels — ID ile direkt hedef
+  const slPart=document.getElementById('sl-part'); if(slPart) slPart.textContent='// '+L.partName;
+  const slSev=document.getElementById('sl-sev'); if(slSev) slSev.textContent=L.severity;
+  const slNote=document.getElementById('sl-note'); if(slNote) slNote.textContent=L.note;
+  const slPhoto=document.getElementById('sl-photo'); if(slPhoto) slPhoto.textContent=L.photoLabel;
+  const slTech=document.getElementById('sl-tech'); if(slTech) slTech.textContent=L.techSection;
+  // Form labels
+  const fls=document.querySelectorAll('.fl');
+  if(fls[0]) fls[0].textContent=L.partName;
+  if(fls[1]) fls[1].textContent=L.partCustom||L.partName;
+  if(fls[2]) fls[2].textContent=L.damageType;
+  // Placeholders
+  const fp=document.getElementById('fp'); if(fp) fp.placeholder=L.partPh;
+  const fn=document.getElementById('fn'); if(fn) fn.placeholder=L.notePh;
+  const ftech=document.getElementById('ftech'); if(ftech) ftech.placeholder=L.techPh;
+  // Damage type options
+  const ft=document.getElementById('ft');
+  if(ft){
+    const cur=ft.value;
+    ft.innerHTML=`<option value="">${L.select}</option>`+L.types.map(t=>`<option>${t}</option>`).join('');
+    ft.value=cur;
+  }
+  // Severity buttons
+  const sevbtns=document.querySelectorAll('.sevbtn');
+  if(sevbtns[0]) sevbtns[0].textContent=L.low;
+  if(sevbtns[1]) sevbtns[1].textContent=L.mid;
+  if(sevbtns[2]) sevbtns[2].textContent=L.high;
+  // Save button ve hint — inspector gizli olsa bile güncelle
+  const sb=document.getElementById('savebtn');
+  if(sb && !editId){ sb.textContent=L.save; }
+  const hint=document.getElementById('hint');
+  if(hint && !curPt && !editId){ hint.textContent=L.hint; hint.style.color=''; }
+  // Hint HTML içinde statik yazıyı da güncelle
+  const hintSpan=document.querySelector('#tab-form #hint');
+  if(hintSpan && !curPt && !editId) hintSpan.textContent=L.hint;
+  // HUD
+  const hudtl=document.getElementById('hudtl');
+  if(hudtl) hudtl.innerHTML=`
+    <div class="ha">${L.hudTitle||'// DİJİTAL İKİZ'}</div>
+    <div>${L.hudTurn}</div><div>${L.hudPan}</div><div>${L.hudZoom}</div>
+    <div style="margin-top:6px">${L.hudClick} <span class="ha">${L.hudMark}</span></div>`;
+  // Modal
+  const mt=document.querySelector('.modal-title'); if(mt) mt.textContent=L.modalTitle;
+  const mnl=document.querySelector('.modal-label'); if(mnl) mnl.textContent=L.motorName;
+  const mok=document.getElementById('m-ok'); if(mok&&!mok.disabled) mok.textContent=L.add;
+  const mcan=document.querySelector('.modal-cancel'); if(mcan) mcan.textContent=L.cancel;
+  // Logo — ana sayfada çevrilen adı, motor sayfasında motor adını göster
+  const logoEl=document.getElementById('logo-text');
+  if(logoEl){
+    if(!activeMotorId) logoEl.textContent=L.logoText;
+  }
+  // Overlay yükleme yazısı
+  const otitle=document.getElementById('otitle'); if(otitle) otitle.textContent=L.loading;
+  // Empty state
+  document.querySelectorAll('.empty').forEach(el=>{
+    if(el.querySelector('.ei')) el.innerHTML=`<div class="ei">◈</div>${L.noRecords}`;
+  });
+  const srch=document.getElementById('motor-search'); if(srch) srch.placeholder=L.searchPh;
+  const ht=document.querySelector('.home-title'); if(ht) ht.textContent=L.homeTitle;
+  initPartSelect();
+  // Hasar tipi dropdown — seçili index'i koru
+  const ftEl=document.getElementById('ft');
+  if(ftEl){
+    ftEl.innerHTML=`<option value="">${L.select||'Seçin...'}</option>`+L.types.map(o=>`<option>${o}</option>`).join('');
+    if(curTypeIndex>=0) ftEl.selectedIndex=curTypeIndex+1;
+    updatePredictive(curTypeIndex);
+  }
+  // Filtre butonları
+  const clearToggle=document.getElementById('clear-toggle'); if(clearToggle) clearToggle.textContent=L.clearToggle;
+  const clearPrompt=document.getElementById('clear-prompt'); if(clearPrompt) clearPrompt.textContent=L.clearPrompt;
+  const clearConfirmBtn=document.getElementById('clear-confirm-btn'); if(clearConfirmBtn) clearConfirmBtn.textContent=L.clearConfirmBtn;
+  const clearCancelBtn=document.getElementById('clear-cancel-btn'); if(clearCancelBtn) clearCancelBtn.textContent=L.clearCancelBtn;
+  const cancelBtn=document.getElementById('cancelbtn'); if(cancelBtn) cancelBtn.textContent=L.cancel;
+  const fa=document.getElementById('flt-all'); if(fa) fa.textContent=L.fltAll;
+  const fo=document.getElementById('flt-open'); if(fo) fo.textContent=L.fltOpen;
+  const fpr=document.getElementById('flt-prog'); if(fpr) fpr.textContent=L.fltProg;
+  const fd=document.getElementById('flt-done'); if(fd) fd.textContent=L.fltDone;
+  // Ana sayfa yenile
+  if(!activeMotorId) renderHome();
+  // Maliyet bölümü
+  const slCost=document.getElementById('sl-cost'); if(slCost) slCost.textContent=L.costLabel;
+  const lblHours=document.getElementById('lbl-hours'); if(lblHours) lblHours.textContent=L.hoursLabel;
+  const lblCost=document.getElementById('lbl-cost'); if(lblCost) lblCost.textContent=L.costFieldLabel.replace(/[₺$€]/g, cur());
+  const fhours=document.getElementById('fhours'); if(fhours) fhours.placeholder=L.hoursPh;
+  const fcost=document.getElementById('fcost'); if(fcost) fcost.placeholder=L.costPh;
+  const photoDrop2=document.getElementById('photo-drop');
+  if(photoDrop2) photoDrop2.textContent=L.photoBtn;
+  // Boyut placeholder ve label
+  const fdim=document.getElementById('fdim'); if(fdim) fdim.placeholder=L.dimPh;
+  const dlbl=document.getElementById('dim-label'); if(dlbl) dlbl.textContent=L.dimLabel||'BOYUT (mm)';
+  // Durum butonları
+  const stsl=document.getElementById('status-sl'); if(stsl) stsl.textContent='// '+L.statusLabel;
+  const stOpen=document.getElementById('st-open'); if(stOpen) stOpen.textContent='🔴 '+L.sOpen2.toUpperCase();
+  const stProg=document.getElementById('st-prog'); if(stProg) stProg.textContent='🟡 '+L.sProgress2.toUpperCase();
+  const stDone=document.getElementById('st-done'); if(stDone) stDone.textContent='🟢 '+L.sResolved2.toUpperCase();
+  // Quick tags dili güncelle
+  initQuickTags();
+  // YENİ MOTOR kartı
+  const addlbl=document.querySelector('.add-label'); if(addlbl) addlbl.textContent=L.newMotor;
+  // Düzenleme modundaysa hint ve butonu da güncelle
+  if(editId!==null){
+    const sb2=document.getElementById('savebtn');
+    if(sb2) sb2.textContent=t('updateBtn').replace('%n',editId);
+    const h2=document.getElementById('hint');
+    if(h2){ h2.textContent=t('editing').replace('%n',editId); h2.style.color='var(--accent)'; }
+  }
+  applyRole();
+}
+
+// ── BOOT ──
+initThree();
+
+function boot(){
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent===lang.toUpperCase());
+  });
+
+  fetch('models.json')
+    .then(r=>r.json())
+    .then(glbFiles=>{
+      const saved = JSON.parse(localStorage.getItem('mhs_records_map') || '{}');
+      motors = glbFiles.map(fileName=>{
+        const id = 'glb_' + fileName.replace(/\W/g,'_');
+        const name = fileName.replace(/\.[^.]+$/,'').toUpperCase();
+        return { id, name, fileName, records: saved[id] || [] };
+      });
+      renderHome();
+      applyLang();
+      applyRole();
+    })
+    .catch(()=>{ renderHome(); applyLang(); applyRole(); });
+}
+
+// Kayıtları ayrı sakla
+function saveMotors(){
+  const map = {};
+  motors.forEach(m=>{ map[m.id] = m.records; });
+  localStorage.setItem('mhs_records_map', JSON.stringify(map));
+}
+
+boot();
+</script>
+</body>
+</html>
