@@ -105,5 +105,5 @@ Open `index.html` directly in the browser — no server needed.
 ## Author
 
 **Leyla Nur Uğur**
-3rd-year MIS student (German program) at Marmara University
+3rd-year MIS student (German) at Marmara University
 [github.com/lewla-u](https://github.com/lewla-u)
