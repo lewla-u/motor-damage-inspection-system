@@ -2067,7 +2067,7 @@ function boot(){
       const saved = JSON.parse(localStorage.getItem('mhs_records_map') || '{}');
       motors = glbFiles.map(fileName=>{
         const id = 'glb_' + fileName.replace(/\W/g,'_');
-        const name = fileName.replace(/\.[^.]+$/,'').toUpperCase();
+        const name = fileName.split('/').pop().replace(/\.[^.]+$/,'').toUpperCase();
         return { id, name, fileName, records: saved[id] || [] };
       });
       renderHome();
