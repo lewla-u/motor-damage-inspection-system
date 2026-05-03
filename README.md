@@ -1,5 +1,5 @@
 # Motor Damage Inspection System
-
+A system design and AI-assisted prototyping project for motor damage detection.
 > Browser-based 3D digital twin for industrial motor damage inspection, reporting, and maintenance management.
 
 **[🔗 Live Demo](https://lewla-u.github.io/motor-damage-inspection-system/)**
